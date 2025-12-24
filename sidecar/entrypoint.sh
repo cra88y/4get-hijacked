@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 REPO_DIR="/var/www/html/4get-repo"
-
+git config --global --add safe.directory /var/www/html/4get-repo
 # Auto-update logic
 if [ ! -d "$REPO_DIR" ]; then
     echo "📥 Cloning 4get..."
