@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # 4get Sidecar Service (PHP)
+  4get-sidecar:
+    build:
+      context: ./sidecar
+      dockerfile: Dockerfile
+    container_name: 4get-sidecar
+    ports:
+      - "8080:80"
+    volumes:
+      - ./sidecar/src:/var/www/html
+      - ./4get-repo:/var/www/html/4get-repo
+    environment:
+      - APACHE_DOCUMENT_ROOT=/var/www/html
+    restart: unless-stopped
+    networks:
+      - searxng-network
+
+  # SearXNG Application (Python)
+  searxng:
+    build:
+      context: ./searxng-repo
+      dockerfile: Dockerfile
+    container_name: searxng
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./searxng-custom:/usr/local/searxng/searx/engines/custom
+      - ./searxng-repo/searxng:/etc/searxng
+    environment:
+      - SEARXNG_HOST=0.0.0.0
+      - SEARXNG_PORT=8080
+      - SEARXNG_BASE_URL=http://localhost:8081/
+    depends_on:
+      - 4get-sidecar
+    restart: unless-stopped
+    networks:
+      - searxng-network
+
+networks:
+  searxng-network:
+    driver: bridge
