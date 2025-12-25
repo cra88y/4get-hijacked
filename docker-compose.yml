@@ -19,6 +19,7 @@ services:
       - '/root/proj/4get-hijacked/searxng-custom/engines/fourget_bridge.py:/usr/local/searxng/searx/engines/fourget_bridge.py:ro'
       - '/root/proj/4get-hijacked/searxng-custom/engines/google-4get.py:/usr/local/searxng/searx/engines/google-4get.py:ro'
       - '/root/proj/4get-hijacked/searxng-custom/engines/brave-4get.py:/usr/local/searxng/searx/engines/brave-4get.py:ro'
+      - '/root/proj/4get-hijacked/searxng-custom/fourget_hijacker_client.py:/usr/local/searxng/searx/fourget_hijacker_client.py:ro'
       - '/root/proj/searxng-custom-theme/crabx:/usr/local/searxng/searx/templates/simple'
       - '/root/proj/searxng-custom-theme/crabx-static/css:/usr/local/searxng/searx/static/themes/simple/css'
     networks:

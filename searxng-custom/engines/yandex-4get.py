@@ -7,7 +7,7 @@ weight = 100
 # Explicit definitions for SearXNG's static analysis
 def request(query, params):
     """
-    Request function for the Google engine.
+    Request function for the Yandex engine.
     
     Args:
         query: The search query.
@@ -27,13 +27,13 @@ def request(query, params):
     }
     
     # Call the client to do the work
-    response_data = client.fetch('google', fourget_params)
+    response_data = client.fetch('yandex', fourget_params)
     params['results'] = response_data
     return params
 
 def response(params):
     """
-    Response function for the Google engine.
+    Response function for the Yandex engine.
     
     Args:
         params: A dictionary of parameters.
@@ -47,4 +47,4 @@ def response(params):
     
     # Use the shared normalizer
     client = FourgetHijackerClient()
-    return client.normalize_results(response_data, 'google')
+    return client.normalize_results(response_data, 'yandex')

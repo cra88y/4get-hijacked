@@ -1,0 +1,6 @@
+{
+  "google": { "file": "scraper/google.php", "class": "google" },
+  "duckduckgo": { "file": "scraper/ddg.php", "class": "ddg" },
+  "brave": { "file": "scraper/brave.php", "class": "brave" },
+  "yandex": { "file": "scraper/yandex.php", "class": "yandex" }
+}
