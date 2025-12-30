@@ -9,16 +9,6 @@ language_support = True
 
 # Explicit definitions for SearXNG's static analysis
 def request(query, params):
-    """
-    Request function for the Brave engine.
-    
-    Args:
-        query: The search query.
-        params: A dictionary of parameters.
-    
-    Returns:
-        A dictionary containing the results.
-    """
     client = FourgetHijackerClient()
     
     # Map SearXNG params to 4get params
@@ -35,15 +25,6 @@ def request(query, params):
     return params
 
 def response(params):
-    """
-    Response function for the Brave engine.
-    
-    Args:
-        params: A dictionary of parameters.
-    
-    Returns:
-        A list of results in the SearXNG format.
-    """
     response_data = params.get('results')
     if not response_data:
         return []
