@@ -1,4 +1,4 @@
-from ..fourget_hijacker_client import FourgetHijackerClient
+from fourget_hijacker_client import FourgetHijackerClient
 
 categories = ['general', 'web']
 paging = True
