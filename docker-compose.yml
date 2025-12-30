@@ -10,8 +10,8 @@ services:
       - 'INSTANCE_NAME=${INSTANCE_NAME}'
       - 'SEARXNG_BASE_URL=${SERVICE_FQDN_SEARXNG}'
       - 'SEARXNG_SECRET=${SERVICE_PASSWORD_SEARXNGSECRET}'
-      - 'SEARXNG_REDIS_URL=redis://valkey:6379/0'
-      - 'SEARXNG_VALKEY_URL=redis://valkey:6379/0'
+      - 'SEARXNG_REDIS_URL=valkey://valkey:6379/0'
+      - 'SEARXNG_VALKEY_URL=valkey://valkey:6379/0'
     volumes:
       - './settings.yml:/etc/searxng/settings.yml'
       - './limiter.toml:/etc/searxng/limiter.toml'
@@ -20,7 +20,7 @@ services:
       - '/root/proj/4get-hijacked/searx/engines/brave-4get.py:/usr/local/searxng/searx/engines/brave-4get.py:ro'
       - '/root/proj/4get-hijacked/searx/engines/duckduckgo-4get.py:/usr/local/searxng/searx/engines/duckduckgo-4get.py:ro'
       - '/root/proj/4get-hijacked/searx/engines/yandex-4get.py:/usr/local/searxng/searx/engines/yandex-4get.py:ro'
-      - '/root/proj/4get-hijacked/searx/fourget_hijacker_client.py:/usr/local/searxng/searx/fourget_hijacker_client.py:ro'
+      - '/root/proj/4get-hijacked/searx/engines/fourget_hijacker_client.py:/usr/local/searxng/searx/engines/fourget_hijacker_client.py:ro'
       - '/root/proj/searxng-custom-theme/crabx:/usr/local/searxng/searx/templates/simple'
       - '/root/proj/searxng-custom-theme/crabx-static/css:/usr/local/searxng/searx/static/themes/simple/css'
     networks:
