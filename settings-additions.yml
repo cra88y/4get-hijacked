@@ -1,0 +1,78 @@
+engines:
+  - name: google-4get  
+    engine: google-4get
+    enable_http: true    
+    shortcut: g4g  
+    categories: general  
+    timeout: 5.0  
+    disabled: false  
+  - name: brave-4get  
+    engine: brave-4get 
+    enable_http: true   
+    shortcut: b4g  
+    categories: general  
+    timeout: 5.0  
+    disabled: false  
+  - name: duckduckgo-4get
+    enable_http: true  
+    engine: duckduckgo-4get  
+    shortcut: d4g  
+    categories: general  
+    timeout: 2.0  
+    disabled: true
+  - name: yandex-4get
+    enable_http: true    
+    engine: yandex-4get  
+    shortcut: y4g  
+    categories: general  
+    timeout: 2.0  
+    disabled: false
+  - name: mojeek-4get
+    engine: mojeek-4get
+    enable_http: true
+    shortcut: mj4g
+    categories: general
+    timeout: 2.0
+    disabled: false
+  - name: yep-4get
+    engine: yep-4get
+    enable_http: true
+    shortcut: yp4g
+    categories: general
+    timeout: 2.0
+    disabled: false
+  - name: marginalia-4get
+    engine: marginalia-4get
+    enable_http: true
+    shortcut: mg4g
+    categories: general
+    timeout: 1.5
+    disabled: false
+  - name: wiby-4get
+    engine: wiby-4get
+    enable_http: true
+    shortcut: wb4g
+    categories: general
+    timeout: 2.0
+    disabled: false
+  - name: curlie-4get
+    engine: curlie-4get
+    enable_http: true
+    shortcut: cl4g
+    categories: general
+    timeout: 2.0
+    disabled: false
+  - name: baidu-4get
+    engine: baidu-4get
+    enable_http: true
+    shortcut: bd4g
+    categories: general
+    timeout: 7.0
+    disabled: true
+  - name: crowdview-4get
+    engine: crowdview-4get
+    enable_http: true
+    shortcut: cv4g
+    categories: general
+    timeout: 2.0
+    disabled: false
