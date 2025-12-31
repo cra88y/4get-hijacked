@@ -1,8 +1,14 @@
 FROM php:8.2-apache
 
+# 1. Install dependencies for Curl and APCu
 RUN apt-get update && apt-get install -y \
-    git libxml2-dev libonig-dev \
-    && docker-php-ext-install dom xml mbstring \
+    git \
+    libxml2-dev \
+    libonig-dev \
+    libcurl4-openssl-dev \
+    && docker-php-ext-install dom xml mbstring curl \
+    && pecl install apcu \
+    && docker-php-ext-enable apcu \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
 

@@ -1,5 +1,6 @@
 services:
   searxng:
+    user: root
     image: 'ghcr.io/searxng/searxng:latest'
     container_name: searxng
     restart: unless-stopped
@@ -7,6 +8,9 @@ services:
       - valkey
       - 4get-hijacked
     environment:
+      - SEARXNG_OUTGOING_HTTP_PROTOCOL_DISABLED=false
+      - SEARXNG_OUTGOING_ALLOW_PRIVATE_NETWORKS=true
+      - PYTHONPATH=/usr/local/searxng/searx/engines
       - 'INSTANCE_NAME=${INSTANCE_NAME}'
       - 'SEARXNG_BASE_URL=https://${SERVICE_FQDN_SEARXNG}'
       - 'SEARXNG_SECRET=${SERVICE_PASSWORD_SEARXNGSECRET}'
@@ -17,10 +21,14 @@ services:
       - './limiter.toml:/etc/searxng/limiter.toml:ro'
       - '/root/proj/searxng-custom-theme/crabx:/usr/local/searxng/searx/templates/simple'
       - '/root/proj/searxng-custom-theme/crabx-static/css:/usr/local/searxng/searx/static/themes/simple/css'
+      - '/root/proj/4get-hijacked/crab-engine/google-crab.py:/usr/local/searxng/searx/engines/google-crab.py'
       - '/root/proj/4get-hijacked/searx/engines:/tmp/custom-engines:ro'
     networks:
       - searxng-net
-    command: "sh -c \"\necho 'Starting engine copy process...'\nif [ -d '/tmp/custom-engines' ]; then\n    echo 'Copying custom engines from /tmp/custom-engines...'\n    cp -f /tmp/custom-engines/*.py /usr/local/searxng/searx/engines/ 2>/dev/null || echo 'No .py files found'\nelse\n    echo 'ERROR: /tmp/custom-engines directory not found'\nfi\n\necho 'Verification of engines:'\nls -la /usr/local/searxng/searx/engines/*-4get.py 2>/dev/null || echo 'No 4get engines found'\n\necho 'Launching SearXNG...'\nexec /usr/local/searxng/dockerfiles/docker-entrypoint.sh\n\"\n"
+    entrypoint:
+      - /bin/sh
+      - '-c'
+      - "echo \"--- CUSTOM STARTUP SCRIPT STARTED ---\"\n\nif [ -d '/tmp/custom-engines' ]; then\n    echo \"Found custom engines directory. Copying...\"\n    cp -fv /tmp/custom-engines/*.py /usr/local/searxng/searx/engines/\n    \n    echo \"Fixing permissions...\"\n    chown searxng:searxng /usr/local/searxng/searx/engines/*.py\n    \n    echo \"Verifying copy:\"\n    ls -la /usr/local/searxng/searx/engines/*-4get.py\nelse\n    echo \"ERROR: /tmp/custom-engines directory not found!\"\n    ls -la /tmp/\nfi\n\necho \"--- HANDING OVER TO ORIGINAL ENTRYPOINT ---\"\n# We manually execute the original entrypoint to start the app\nexec /usr/local/searxng/entrypoint.sh\n"
   valkey:
     container_name: valkey
     image: 'docker.io/valkey/valkey:alpine'
