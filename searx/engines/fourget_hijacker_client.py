@@ -266,7 +266,6 @@ class FourgetHijackerClient:
 
     @staticmethod
     def _normalize_image_result(item):
-        """Normalize image search results"""
         result = {
             "title": item.get("title"),
             "url": item.get("url"),
@@ -275,8 +274,23 @@ class FourgetHijackerClient:
         }
         
         if item.get("source") and len(item["source"]) >= 2:
-            result["img_src"] = item["source"][0]["url"]
-            result["thumbnail_src"] = item["source"][1]["url"]
+            img_url = item["source"][0]["url"]
+            thumb_url = item["source"][1]["url"]
+
+            # GAP FIX: If 4get returns a relative proxy URL, try to extract the real URL
+            # 4get usually does /img?url=REAL_URL&...
+            if img_url and "url=" in img_url and (img_url.startswith("/") or "4get" in img_url):
+                from urllib.parse import parse_qs, urlparse
+                try:
+                    parsed = urlparse(img_url)
+                    qs = parse_qs(parsed.query)
+                    if 'url' in qs:
+                        img_url = qs['url'][0]
+                except:
+                    pass
+
+            result["img_src"] = img_url
+            result["thumbnail_src"] = thumb_url
             
         return result
 
