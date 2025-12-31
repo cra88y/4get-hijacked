@@ -13,20 +13,23 @@ engines:
     categories: general  
     timeout: 5.0  
     disabled: false  
+    brave_spellcheck: 'yes'
   - name: duckduckgo-4get
     enable_http: true  
     engine: duckduckgo-4get  
     shortcut: d4g  
     categories: general  
     timeout: 2.0  
-    disabled: true
+    disabled: false
+    ddg_extendedsearch: 'yes'
   - name: yandex-4get
     enable_http: true    
     engine: yandex-4get  
     shortcut: y4g  
     categories: general  
-    timeout: 2.0  
+    timeout: 3.0  
     disabled: false
+    yandex_language: 'en'
   - name: mojeek-4get
     engine: mojeek-4get
     enable_http: true
@@ -46,8 +49,9 @@ engines:
     enable_http: true
     shortcut: mg4g
     categories: general
-    timeout: 1.5
+    timeout: 2.0
     disabled: false
+    marginalia_intitle: 'no'
   - name: wiby-4get
     engine: wiby-4get
     enable_http: true
@@ -67,8 +71,8 @@ engines:
     enable_http: true
     shortcut: bd4g
     categories: general
-    timeout: 7.0
-    disabled: true
+    timeout: 2.0
+    disabled: false
   - name: crowdview-4get
     engine: crowdview-4get
     enable_http: true
