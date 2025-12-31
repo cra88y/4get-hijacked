@@ -7,7 +7,7 @@ paging = True
 def request(query, params):  
     params['url'] = 'http://4get-hijacked:80/harness.php'  
     params['method'] = 'POST'  
-    params['data'] = {  
+    params['json'] = {  
         "engine": "yandex",   
         "params": {"s": query}  
     }  
