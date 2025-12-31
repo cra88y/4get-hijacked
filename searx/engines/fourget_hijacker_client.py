@@ -163,185 +163,122 @@ class FourgetHijackerClient:
   
     @staticmethod  
     def normalize_results(response_data: Any, engine: str = None):  
-        """Normalize 4get response format to SearXNG expected format"""  
         results = []  
-          
-        # Handle special content first  
-        if isinstance(response_data, dict):  
-            # Add spelling corrections as suggestions  
-            if response_data.get("spelling", {}).get("type") != "no_correction":  
-                spelling = response_data["spelling"]  
-                results.append({"suggestion": spelling["correction"]})  
-              
-            # Add related searches as suggestions  
-            if response_data.get("related"):  
-                for related in response_data["related"]:  
-                    results.append({"suggestion": related})  
-              
-            # Add instant answers  
-            if response_data.get("answer"):  
-                for answer in response_data["answer"]:  
-                    results.append({  
-                        "title": answer.get("title"),  
-                        "content": FourgetHijackerClient._format_answer_content(answer.get("description", [])),  
-                        "url": answer.get("url")  
-                    })  
-          
+        
+        # Handle spelling corrections as suggestions  
+        if isinstance(response_data, dict) and response_data.get("spelling", {}).get("type") != "no_correction":  
+            spelling = response_data["spelling"]  
+            results.append({"suggestion": spelling["correction"]})  
+        
+        # Add related searches as suggestions  
+        if isinstance(response_data, dict) and response_data.get("related"):  
+            for related in response_data["related"]:  
+                results.append({"suggestion": related})  
+        
         # Process standard results  
         if isinstance(response_data, dict):  
             for result_type in ["web", "image", "video", "news"]:  
                 if result_type in response_data:  
                     for item in response_data[result_type]:  
-                        # Skip results with broken data  
-                        if FourgetHijackerClient._has_broken_thumbnail(item):  
-                            continue  
-                        if FourgetHijackerClient._has_invalid_date(item):  
-                            continue  
-                          
-                        # Normalize based on result type  
                         if result_type == "web":  
                             result = FourgetHijackerClient._normalize_web_result(item)  
                         elif result_type == "image":  
                             result = FourgetHijackerClient._normalize_image_result(item)  
+                            # Add missing template field  
+                            result["template"] = "images.html"  
                         elif result_type == "video":  
                             result = FourgetHijackerClient._normalize_video_result(item)  
+                            # Add missing template field    
+                            result["template"] = "videos.html"  
                         elif result_type == "news":  
                             result = FourgetHijackerClient._normalize_news_result(item)  
-                          
-                        results.append(result)  
-          
+                        
+                        if result:  
+                            results.append(result)  
+        
         return results  
-  
+    
     @staticmethod  
-    def _format_answer_content(description: list) -> str:  
-        """Format answer description array to string"""  
-        if not isinstance(description, list):  
-            return str(description)  
-          
-        parts = []  
-        for item in description:  
-            if isinstance(item, dict) and "value" in item:  
-                parts.append(item["value"])  
-            elif isinstance(item, str):  
-                parts.append(item)  
-          
-        return " ".join(parts)  
-  
-    @staticmethod  
-    def _normalize_web_result(item: Dict[str, Any]) -> Dict[str, Any]:  
+    def _normalize_web_result(item):  
         """Normalize web search results"""  
         result = {  
             "title": item.get("title"),  
             "url": item.get("url"),  
-            "content": item.get("description") or item.get("snippet") or item.get("content", "")  
+            "content": item.get("description")  
         }  
-          
-        # Handle thumbnail  
-        if isinstance(item.get("thumb"), dict):  
-            thumb_url = item["thumb"].get("url")  
-            if thumb_url:  
-                result["thumbnail"] = thumb_url  
-        elif isinstance(item.get("thumb"), str):  
-            result["thumbnail"] = item["thumb"]  
-          
-        # Add date without time portion  
-        date_val = item.get("date")  
+        
+        # Add date as datetime object, not string  
+        date_val = item.get("date") or item.get("publishedDate")  
         if date_val:  
             try:  
-                # Convert to date object to strip time  
-                date_obj = datetime.fromtimestamp(int(date_val))  
-                result["publishedDate"] = date_obj.strftime("%Y-%m-%d")  
+                result["publishedDate"] = datetime.fromtimestamp(int(date_val))  
             except Exception:  
                 pass  
-          
+        
         return result  
-  
-    @staticmethod  
-    def _normalize_image_result(item: Dict[str, Any]) -> Dict[str, Any]:  
+    
+    @staticmethod    
+    def _normalize_image_result(item):  
         """Normalize image search results"""  
         result = {  
             "title": item.get("title"),  
             "url": item.get("url"),  
             "img_src": None,  
-            "thumbnail": None,  
-            "resolution": None  
+            "thumbnail_src": None  
         }  
-          
-        # Handle image sources  
-        if item.get("source") and len(item["source"]) > 0:  
-            # Use the largest image as source  
-            largest = item["source"][0]  
-            result["img_src"] = largest.get("url")  
-              
-            # Use thumbnail if available  
-            if len(item["source"]) > 1:  
-                thumb = item["source"][-1]  
-                result["thumbnail"] = thumb.get("url")  
-              
-            # Resolution  
-            if largest.get("width") and largest.get("height"):  
-                result["resolution"] = f"{largest['width']}x{largest['height']}"  
-          
+        
+        # Handle image source data  
+        if item.get("source") and len(item["source"]) >= 2:  
+            result["img_src"] = item["source"][0]["url"]  
+            result["thumbnail_src"] = item["source"][1]["url"]  
+        
         return result  
-  
+    
     @staticmethod  
-    def _normalize_video_result(item: Dict[str, Any]) -> Dict[str, Any]:  
-        """Normalize video search results"""  
+    def _normalize_video_result(item):  
+        """Normalize video search results"""    
         result = {  
             "title": item.get("title"),  
             "url": item.get("url"),  
-            "content": item.get("description", ""),  
-            "duration": None,  
-            "views": None,  
+            "content": item.get("description"),  
             "thumbnail": None  
         }  
-          
-        # Duration  
-        if item.get("duration"):  
-            result["duration"] = item["duration"]  
-          
-        # Views  
-        if item.get("views"):  
-            result["views"] = str(item["views"])  
-          
-        # Thumbnail  
-        if isinstance(item.get("thumb"), dict):  
-            thumb_url = item["thumb"].get("url")  
-            if thumb_url:  
-                result["thumbnail"] = thumb_url  
-          
-        # Date without time portion  
-        if item.get("date"):  
+        
+        # Handle thumbnail  
+        if item.get("thumb") and isinstance(item.get("thumb"), dict):  
+            result["thumbnail"] = item["thumb"].get("url")  
+        elif isinstance(item.get("thumb"), str):  
+            result["thumbnail"] = item["thumb"]  
+        
+        # Add date as datetime object  
+        date_val = item.get("date") or item.get("publishedDate")  
+        if date_val:  
             try:  
-                date_obj = datetime.fromtimestamp(int(item["date"]))  
-                result["publishedDate"] = date_obj.strftime("%Y-%m-%d")  
+                result["publishedDate"] = datetime.fromtimestamp(int(date_val))  
             except Exception:  
                 pass  
-          
+        
         return result  
-  
+    
     @staticmethod  
-    def _normalize_news_result(item: Dict[str, Any]) -> Dict[str, Any]:  
+    def _normalize_news_result(item):  
         """Normalize news search results"""  
         result = {  
             "title": item.get("title"),  
             "url": item.get("url"),  
-            "content": item.get("description", ""),  
+            "content": item.get("description"),  
             "thumbnail": None  
         }  
-          
-        # Thumbnail  
-        if isinstance(item.get("thumb"), dict):  
-            thumb_url = item["thumb"].get("url")  
-            if thumb_url:  
-                result["thumbnail"] = thumb_url  
-          
-        # Date without time portion  
+        
+        # Handle thumbnail  
+        if item.get("thumb") and isinstance(item.get("thumb"), dict):  
+            result["thumbnail"] = item["thumb"].get("url")  
+        
+        # Add date as datetime object  
         if item.get("date"):  
             try:  
-                date_obj = datetime.fromtimestamp(int(item["date"]))  
-                result["publishedDate"] = date_obj.strftime("%Y-%m-%d")  
+                result["publishedDate"] = datetime.fromtimestamp(int(item["date"]))  
             except Exception:  
                 pass  
-          
+        
         return result
