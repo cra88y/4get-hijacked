@@ -56,13 +56,27 @@ if (!class_exists($className)) {
 $instance = new $className();
 
 $params = array_merge([
-    's' => '', 'country' => 'us', 'nsfw' => 'yes', 'lang' => 'en'
+    's' => '', 
+    'country' => 'us', 
+    'nsfw' => 'yes', 
+    'lang' => 'en',
+    'npt' => null,
+    'older' => false,
+    'newer' => false,
+    'spellcheck' => 'yes'
 ], $input['params'] ?? []);
 
 try {
     // 4get engines use the 'web' method for standard searches
     $result = $instance->web($params);
-    
+
+    // Debug logging
+    $webCount = isset($result['web']) ? count($result['web']) : 0;
+    error_log("Hijacker: Scraper '{$engine}' returned {$webCount} web results.");
+    if ($webCount === 0) {
+        error_log("Hijacker: WARNING - Empty results from {$engine}. Response dump: " . json_encode($result));
+    }
+
     // Clear the buffer (discard warnings) and send JSON
     ob_end_clean();
     echo json_encode($result);

@@ -1,0 +1,119 @@
+# Coolify-Optimized Docker Compose Configuration
+# This version includes enhancements for better Coolify integration and responsiveness
+version: '3.8'
+
+services:
+  searxng:
+    image: 'docker.io/searxng/searxng:latest'
+    restart: unless-stopped  # Changed from 'always' for better control
+    depends_on:
+      valkey:
+        condition: service_healthy  # Wait for valkey to be actually ready
+      4get-hijacked:
+        condition: service_started
+    environment:
+      - SERVICE_FQDN_SEARXNG_8080
+      - 'INSTANCE_NAME=${INSTANCE_NAME}'
+      - 'SEARXNG_BASE_URL=${SERVICE_FQDN_SEARXNG}'
+      - 'SEARXNG_SECRET=${SERVICE_PASSWORD_SEARXNGSECRET}'
+      - 'SEARXNG_REDIS_URL=redis://valkey:6379/0'
+      - 'SEARXNG_VALKEY_URL=redis://valkey:6379/0'
+      - 'PYTHONPATH=/usr/local/searxng/searx/engines'
+    volumes:
+      - './settings.yml:/etc/searxng/settings.yml'
+      - './limiter.toml:/etc/searxng/limiter.toml'
+      - '/root/proj/4get-hijacked/crab-engine/google-crab.py:/usr/local/searxng/searx/engines/google-crab.py'
+      - '/root/proj/4get-hijacked/searx/engines/google-4get.py:/usr/local/searxng/searx/engines/google-4get.py:ro'
+      - '/root/proj/4get-hijacked/searx/engines/brave-4get.py:/usr/local/searxng/searx/engines/brave-4get.py:ro'
+      - '/root/proj/4get-hijacked/searx/engines/duckduckgo-4get.py:/usr/local/searxng/searx/engines/duckduckgo-4get.py:ro'
+      - '/root/proj/4get-hijacked/searx/engines/yandex-4get.py:/usr/local/searxng/searx/engines/yandex-4get.py:ro'
+      - '/root/proj/4get-hijacked/searx/fourget_hijacker_client.py:/usr/local/searxng/searx/fourget_hijacker_client.py:ro'
+      - '/root/proj/searxng-custom-theme/crabx:/usr/local/searxng/searx/templates/simple'
+      - '/root/proj/searxng-custom-theme/crabx-static/css:/usr/local/searxng/searx/static/themes/simple/css'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    labels:
+      - "coolify.service=search"
+      - "coolify.priority=high"
+      - "coolify.dependency=valkey,4get-hijacked"
+    networks:
+      - searxng-net
+
+  valkey:
+    container_name: valkey
+    image: 'docker.io/valkey/valkey:alpine'
+    command: 'valkey-server --save 60 1 --loglevel warning'
+    restart: unless-stopped
+    volumes:
+      - 'valkey-data:/data'
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    labels:
+      - "coolify.service=cache"
+      - "coolify.priority=medium"
+      - "coolify.persistent=true"
+    networks:
+      - searxng-net
+
+  4get-hijacked:
+    build: /root/proj/4get-hijacked/sidecar
+    container_name: 4get-hijacked
+    ports:
+      - '8081:80'
+    restart: unless-stopped
+    volumes:
+      - '/root/proj/4get-hijacked/sidecar/src:/var/www/html'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 768M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    labels:
+      - "coolify.service=scraper"
+      - "coolify.priority=medium"
+      - "coolify.worker=true"
+    networks:
+      - searxng-net
+
+networks:
+  searxng-net:
+    driver: bridge
+    attachable: true  # Allow additional containers to attach if needed
+
+volumes:
+  valkey-data:
+    name: valkey-data
+    driver: local

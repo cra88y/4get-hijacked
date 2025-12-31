@@ -1,7 +1,7 @@
 # .agents/
-# .kilocode/
-# 4get-repo/
-# searxng-repo/
+.kilocode/
+4get-repo/
+searxng-repo/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
