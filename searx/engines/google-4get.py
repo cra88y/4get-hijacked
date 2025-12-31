@@ -6,7 +6,7 @@ paging = True
 def request(query, params):  
     params['url'] = 'http://4get-hijacked:80/harness.php'  
     params['method'] = 'POST'  
-    params['json'] = {  
+    params['data'] = {  
         "engine": "google",   
         "params": {"s": query}  
     }  
@@ -15,6 +15,10 @@ def request(query, params):
 def response(resp):  
     try:  
         response_data = resp.json()  
-        return FourgetHijackerClient.normalize_results(response_data)  
+        logger.debug(f"4get response data: {response_data}") 
+        results = FourgetHijackerClient.normalize_results(response_data)  
+        logger.debug(f"Normalized results: {results}") 
+        return results  
     except Exception as e:  
+        logger.error(f"4get response error: {e}") 
         return []

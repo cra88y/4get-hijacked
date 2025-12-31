@@ -15,6 +15,10 @@ def request(query, params):
 def response(resp):  
     try:  
         response_data = resp.json()  
-        return FourgetHijackerClient.normalize_results(response_data)  
+        logger.debug(f"4get response data: {response_data}") 
+        results = FourgetHijackerClient.normalize_results(response_data)  
+        logger.debug(f"Normalized results: {results}") 
+        return results  
     except Exception as e:  
+        logger.error(f"4get response error: {e}") 
         return []
