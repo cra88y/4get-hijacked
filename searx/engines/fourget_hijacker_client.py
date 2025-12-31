@@ -5,6 +5,7 @@ from datetime import datetime
 import time
 import json
 from urllib.parse import parse_qs, urlparse
+from searx.result_types import Answer  
 
 logger = logging.getLogger(__name__)
 
@@ -217,19 +218,75 @@ class FourgetHijackerClient:
             return True
         return False
 
-    @staticmethod
-    def _normalize_answer_result(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        desc_list = item.get("description")
-        if not desc_list or not isinstance(desc_list, list): return None
-        description_parts = []
-        for part in desc_list:
-            if isinstance(part, dict) and part.get("type") == "text":
-                val = part.get("value")
-                if val and isinstance(val, str) and val.strip():
-                    description_parts.append(val.strip())
-        answer_text = " ".join(description_parts)
-        if not answer_text: return None
-        return {"answer": FourgetHijackerClient._truncate_content(answer_text)}
+    @staticmethod  
+    def _normalize_answer_result(item: Dict[str, Any]) -> Optional[Answer | Dict[str, Any]]:  
+        desc_list = item.get("description")  
+        if not desc_list or not isinstance(desc_list, list):  
+            return None  
+        
+        description_parts = []  
+        for part in desc_list:  
+            if isinstance(part, dict) and part.get("type") == "text":  
+                val = part.get("value")  
+                if val and isinstance(val, str) and val.strip():  
+                    description_parts.append(val.strip())  
+        
+        answer_text = " ".join(description_parts)  
+        if not answer_text:  
+            return None  
+        
+        # Check if this is an infobox (has table or sublink data)  
+        if item.get("table") or item.get("sublink"):  
+            return FourgetHijackerClient._normalize_infobox_from_answer(item)  
+        
+        # Regular answer  
+        return Answer(answer=FourgetHijackerClient._truncate_content(answer_text))  
+    
+    @staticmethod  
+    def _normalize_infobox_from_answer(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:  
+        title = item.get("title", "Infobox")  
+        
+        result = {  
+            'infobox': title,  
+            'id': item.get("url") or title,  
+            'content': FourgetHijackerClient._truncate_content(  
+                " ".join([  
+                    part.get("value", "")   
+                    for part in item.get("description", [])  
+                    if isinstance(part, dict) and part.get("type") == "text"  
+                ])  
+            ),  
+            'urls': [],  
+            'attributes': []  
+        }  
+        
+        # Add thumbnail if present  
+        thumb_url = item.get("thumb")  
+        if thumb_url and FourgetHijackerClient._is_valid_url(thumb_url):  
+            result["img_src"] = thumb_url  
+        
+        # Add main URL  
+        if item.get("url") and FourgetHijackerClient._is_valid_url(item["url"]):  
+            result["urls"].append({'title': 'Source', 'url': item["url"]})  
+        
+        # Convert table data to attributes  
+        table_data = item.get("table", {})  
+        if isinstance(table_data, dict):  
+            for key, value in table_data.items():  
+                if value and str(value).strip():  
+                    result["attributes"].append({  
+                        'label': key,  
+                        'value': str(value)  
+                    })  
+        
+        # Add sublinks as URLs  
+        sublinks = item.get("sublink", {})  
+        if isinstance(sublinks, dict):  
+            for label, url in sublinks.items():  
+                if url and FourgetHijackerClient._is_valid_url(url):  
+                    result["urls"].append({'title': label, 'url': url})  
+        
+        return result
 
     @staticmethod
     def _normalize_web_result(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
