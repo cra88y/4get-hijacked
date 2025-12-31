@@ -12,6 +12,8 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install dom xml mbstring curl \
     && pecl install apcu \
     && docker-php-ext-enable apcu \
+    # Enable APCu for CLI scripts (critical for the backend logic)
+    && echo "apc.enable_cli=1" >> /usr/local/etc/php/conf.d/docker-php-ext-apcu.ini \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
 
@@ -19,8 +21,8 @@ RUN apt-get update && apt-get install -y \
 RUN wget -O- https://github.com/lwthiker/curl-impersonate/releases/download/v0.6.1/curl-impersonate-v0.6.1.x86_64-linux-gnu.tar.gz \
     | tar -xz -C /usr/local/bin
 
-# 3. AUTOMATION: Symlink to the name 4get looks for internally
-# 4get checks for 'curl_chrome116' in the system PATH. We give it exactly that.
+# 3. Symlink to the name 4get looks for internally
+# This allows 4get to find the stealth binary naturally
 RUN ln -s /usr/local/bin/curl-impersonate-chrome /usr/local/bin/curl_chrome116
 
 WORKDIR /var/www/html
@@ -29,7 +31,7 @@ WORKDIR /var/www/html
 RUN git clone --depth 1 https://git.lolcat.ca/lolcat/4get.git /var/www/html/4get-repo \
     && chown -R www-data:www-data /var/www/html/4get-repo
 
-# 5. Create dummy lib
+# 5. Create dummy lib structure
 RUN mkdir -p dummy_lib/lib && \
     touch dummy_lib/lib/backend.php && \
     touch dummy_lib/lib/fuckhtml.php
