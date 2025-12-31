@@ -43,7 +43,7 @@ class FourgetHijackerClient:
             country = lang_full.split("-")[1] if "-" in lang_full else "us"  
             
             # Yandex-specific language validation  
-            if engine_name == "yandex":  
+            if engine_name == "yandex4":  
                 yandex_langs = ["en", "ru", "be", "fr", "de", "id", "kk", "tt", "tr", "uk"]  
                 if lang in yandex_langs:  
                     fourget_params["lang"] = lang  
