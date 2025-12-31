@@ -45,8 +45,6 @@ services:
     ports:
       - '8081:80'
     restart: unless-stopped
-    volumes:
-      - '/root/proj/4get-hijacked/sidecar/src:/var/www/html'
     networks:
       - searxng-net
 networks:

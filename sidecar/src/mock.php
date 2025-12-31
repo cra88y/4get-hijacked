@@ -1,4 +1,6 @@
 <?php
+putenv("CURL_IMPERSONATE_CHROME=/usr/local/bin/curl_chrome116");
+putenv("CURL_IMPERSONATE_FF=/usr/local/bin/curl_ff117");
 // 1. Load the REAL parsing tool from the 4get repo
 // We need this to actually parse the HTML!
 require_once __DIR__ . '/4get-repo/lib/fuckhtml.php';
