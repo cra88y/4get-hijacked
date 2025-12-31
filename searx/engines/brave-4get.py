@@ -18,7 +18,8 @@ def request(query, params):
     # Apply engine-specific custom parameters from settings.yml  
     if 'brave_spellcheck' in params:  
         fourget_params['spellcheck'] = params['brave_spellcheck']  
-      
+    if 'brave_country' in params:  
+        fourget_params['country'] = params['brave_country']  
     params['url'] = 'http://4get-hijacked:80/harness.php'  
     params['method'] = 'POST'  
     params['json'] = {  

@@ -21,53 +21,59 @@ class FourgetHijackerClient:
             return {}  
   
     @staticmethod  
-    def get_4get_params(query: str, params: Dict[str, Any], engine_filters: Dict[str, Any]) -> Dict[str, Any]:  
+    def get_4get_params(query: str, params: Dict[str, Any], engine_filters: Dict[str, Any], engine_name: str = None) -> Dict[str, Any]:  
         """Map SearXNG parameters to 4get engine parameters"""  
         fourget_params = {"s": query}  
-          
+        
         # Apply 4get's own defaults for each filter  
         for filter_name, filter_config in engine_filters.items():  
             if isinstance(filter_config.get("option"), dict):  
                 default = list(filter_config["option"].keys())[0]  
                 fourget_params[filter_name] = default  
-          
+        
         # Map SearXNG standard parameters  
-        # Safe search mapping: 0/1/2 -> yes/maybe/no  
         nsfw_map = {0: "yes", 1: "maybe", 2: "no"}  
         if "safesearch" in params:  
             fourget_params["nsfw"] = nsfw_map.get(params["safesearch"], "yes")  
-          
-        # Language mapping from locale (en-US -> en)  
+        
+        # Language mapping with engine-specific handling  
         if "language" in params:  
             lang_full = params["language"]  
             lang = lang_full.split("-")[0] if "-" in lang_full else lang_full  
-            fourget_params["lang"] = lang  
-          
-        # Country mapping from locale (en-US -> us)  
-        if "language" in params:  
-            lang_full = params["language"]  
             country = lang_full.split("-")[1] if "-" in lang_full else "us"  
-            fourget_params["country"] = country.lower()  
-          
-        # Time range mapping to Unix timestamps  
+            
+            # Yandex-specific language validation  
+            if engine_name == "yandex":  
+                yandex_langs = ["en", "ru", "be", "fr", "de", "id", "kk", "tt", "tr", "uk"]  
+                if lang in yandex_langs:  
+                    fourget_params["lang"] = lang  
+            else:  
+                fourget_params["lang"] = lang  
+                fourget_params["country"] = country.lower()  
+        
+        # Enhanced time range mapping  
         if "time_range" in params and params["time_range"]:  
             time_range = params["time_range"]  
             current_time = int(time.time())  
-              
-            if time_range == 'day':  
-                fourget_params['newer'] = current_time - 86400  
-            elif time_range == 'week':  
-                fourget_params['newer'] = current_time - 604800  
-            elif time_range == 'month':  
-                fourget_params['newer'] = current_time - 2592000  
-            elif time_range == 'year':  
-                fourget_params['newer'] = current_time - 31536000  
-          
+            
+            time_mappings = {  
+                'day': 86400,  
+                'week': 604800,   
+                'month': 2592000,  
+                'year': 31536000  
+            }  
+            
+            if time_range in time_mappings:  
+                fourget_params['newer'] = current_time - time_mappings[time_range]  
+                # Some engines support both newer and older  
+                if 'older' in engine_filters:  
+                    fourget_params['older'] = current_time  
+        
         # Pagination  
         if "pageno" in params and params["pageno"] > 1:  
             fourget_params["offset"] = (params["pageno"] - 1) * 10  
-          
-        # Engine-specific parameter overrides  
+        
+        # Engine-specific parameter overrides with explicit engine matching  
         engine_specific_mappings = {  
             "google": {"hl": "google_language", "gl": "google_country"},  
             "brave": {"spellcheck": "brave_spellcheck", "country": "brave_country"},  
@@ -75,15 +81,15 @@ class FourgetHijackerClient:
             "yandex": {"lang": "yandex_language"},  
             "marginalia": {"recent": "marginalia_recent", "intitle": "marginalia_intitle"}  
         }  
-          
-        # Apply engine-specific overrides from settings.yml  
-        for engine, mappings in engine_specific_mappings.items():  
-            if engine in str(engine_filters):  # Simple check if this is the right engine  
-                for fourget_param, searxng_param in mappings.items():  
-                    if searxng_param in params:  
-                        fourget_params[fourget_param] = params[searxng_param]  
-          
-        return fourget_params  
+        
+        # Apply engine-specific overrides  
+        if engine_name and engine_name in engine_specific_mappings:  
+            mappings = engine_specific_mappings[engine_name]  
+            for fourget_param, searxng_param in mappings.items():  
+                if searxng_param in params:  
+                    fourget_params[fourget_param] = params[searxng_param]  
+        
+        return fourget_params
   
     def fetch(self, engine: str, params: Dict[str, Any]) -> Dict[str, Any]:  
         """Execute search request via the hijacker"""  

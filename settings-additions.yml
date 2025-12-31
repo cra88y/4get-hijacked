@@ -1,12 +1,12 @@
 engines:
-  - name: google-4get  
+  - name: google
     engine: google-4get
     enable_http: true    
     shortcut: g4g  
     categories: general  
     timeout: 5.0  
     disabled: false  
-  - name: brave-4get  
+  - name: brave 
     engine: brave-4get 
     enable_http: true   
     shortcut: b4g  
@@ -14,7 +14,7 @@ engines:
     timeout: 5.0  
     disabled: false  
     brave_spellcheck: 'yes'
-  - name: duckduckgo-4get
+  - name: duckduckgo
     enable_http: true  
     engine: duckduckgo-4get  
     shortcut: d4g  
@@ -22,7 +22,7 @@ engines:
     timeout: 2.0  
     disabled: false
     ddg_extendedsearch: 'yes'
-  - name: yandex-4get
+  - name: yandex
     enable_http: true    
     engine: yandex-4get  
     shortcut: y4g  
@@ -30,21 +30,21 @@ engines:
     timeout: 3.0  
     disabled: false
     yandex_language: 'en'
-  - name: mojeek-4get
+  - name: mojeek
     engine: mojeek-4get
     enable_http: true
     shortcut: mj4g
     categories: general
     timeout: 2.0
     disabled: false
-  - name: yep-4get
+  - name: yep
     engine: yep-4get
     enable_http: true
     shortcut: yp4g
     categories: general
     timeout: 2.0
     disabled: false
-  - name: marginalia-4get
+  - name: marginalia
     engine: marginalia-4get
     enable_http: true
     shortcut: mg4g
@@ -52,28 +52,28 @@ engines:
     timeout: 2.0
     disabled: false
     marginalia_intitle: 'no'
-  - name: wiby-4get
+  - name: wiby
     engine: wiby-4get
     enable_http: true
     shortcut: wb4g
     categories: general
     timeout: 2.0
     disabled: false
-  - name: curlie-4get
+  - name: curlie
     engine: curlie-4get
     enable_http: true
     shortcut: cl4g
     categories: general
     timeout: 2.0
     disabled: false
-  - name: baidu-4get
+  - name: baidu
     engine: baidu-4get
     enable_http: true
     shortcut: bd4g
     categories: general
     timeout: 2.0
-    disabled: false
-  - name: crowdview-4get
+    disabled: true
+  - name: crowdview
     engine: crowdview-4get
     enable_http: true
     shortcut: cv4g

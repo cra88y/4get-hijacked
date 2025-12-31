@@ -16,7 +16,8 @@ def request(query, params):
     # Apply engine-specific custom parameters  
     if 'ddg_extendedsearch' in params:  
         fourget_params['extendedsearch'] = params['ddg_extendedsearch']  
-      
+    if 'ddg_region' in params:  
+         fourget_params['country'] = params['ddg_region'] 
     params['url'] = 'http://4get-hijacked:80/harness.php'  
     params['method'] = 'POST'  
     params['json'] = {  
