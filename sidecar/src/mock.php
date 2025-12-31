@@ -28,8 +28,8 @@ class backend {
             return trim($proxies[array_rand($proxies)]);
         }
 
-        // 2. Fallback to 4get Config
-        if (!empty(config::PROXY_LIST)) {
+        // 2. Fallback to 4get Config (SAFE CHECK ADDED)
+        if (defined('config::PROXY_LIST') && !empty(config::PROXY_LIST)) {
             $proxies = config::PROXY_LIST;
             return $proxies[array_rand($proxies)];
         }
@@ -94,5 +94,11 @@ class backend {
 }
 
 if (!defined('USER_AGENT')) {
-    define('USER_AGENT', config::USER_AGENT);
+    // Safe check for USER_AGENT constant as well
+    if (defined('config::USER_AGENT')) {
+        define('USER_AGENT', config::USER_AGENT);
+    } else {
+        // Fallback if config is totally broken
+        define('USER_AGENT', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36');
+    }
 }
