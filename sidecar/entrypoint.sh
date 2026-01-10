@@ -24,7 +24,4 @@ else
     echo "⚠️  Config file not found at $CONFIG_FILE. Skipping UA patch."
 fi
 
-# 3. Fix Permissions
-chown -R www-data:www-data /var/www/html
-
 exec "$@"

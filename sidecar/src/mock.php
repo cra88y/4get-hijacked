@@ -6,7 +6,7 @@ require_once __DIR__ . '/4get-repo/lib/fuckhtml.php';
 require_once __DIR__ . '/4get-repo/data/config.php';
 
 /**
- * Smart Backend Implementation
+ * Backend Implementation
  * Uses APCu for state storage and Env Vars for proxies.
  */
 class backend {
@@ -28,7 +28,7 @@ class backend {
             return trim($proxies[array_rand($proxies)]);
         }
 
-        // 2. Fallback to 4get Config (SAFE CHECK ADDED)
+        // 2. Fallback to 4get Config
         if (defined('config::PROXY_LIST') && !empty(config::PROXY_LIST)) {
             $proxies = config::PROXY_LIST;
             return $proxies[array_rand($proxies)];

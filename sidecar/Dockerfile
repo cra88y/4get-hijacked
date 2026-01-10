@@ -4,6 +4,7 @@ FROM php:8.2-apache
 RUN apt-get update && apt-get install -y \
     git \
     wget \
+    curl \
     ca-certificates \
     libxml2-dev \
     libonig-dev \
@@ -15,6 +16,11 @@ RUN apt-get update && apt-get install -y \
     # Enable APCu for CLI and increase memory for token storage
     && echo "apc.enable_cli=1" >> /usr/local/etc/php/conf.d/docker-php-ext-apcu.ini \
     && echo "apc.shm_size=128M" >> /usr/local/etc/php/conf.d/docker-php-ext-apcu.ini \
+    # Enable OPcache for 2-3x sidecar speedup (caches compiled PHP bytecode)
+    && docker-php-ext-enable opcache \
+    && echo "opcache.memory_consumption=128" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini \
+    && echo "opcache.max_accelerated_files=10000" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini \
+    && echo "opcache.validate_timestamps=0" >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
 

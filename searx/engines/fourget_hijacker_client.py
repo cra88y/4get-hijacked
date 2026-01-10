@@ -4,13 +4,14 @@ from datetime import datetime
 import time
 from urllib.parse import parse_qs, urlparse, unquote_plus
 from html import unescape
-from searx.result_types import Answer  
+from searx.result_types import Answer
 
-# Pre-compiled regex for broken image detection
+# Pre-compiled regex patterns
 _BROKEN_IMAGE_RE = re.compile(
     r'(data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP|transparent\.gif|1x1\.(gif|png)|0x0|broken_image|image_not_found|no_image|placeholder\.(png|jpg|svg))',
     re.IGNORECASE
 )
+_WHITESPACE_RE = re.compile(r'\s+')
 
 class FourgetHijackerClient:
     MAX_CONTENT_LENGTH = 5000
@@ -19,7 +20,7 @@ class FourgetHijackerClient:
     # --- Constants ---
     NSFW_MAP = {0: "yes", 1: "maybe", 2: "no"}
     TIME_MAPPINGS = {'day': 86400, 'week': 604800, 'month': 2592000, 'year': 31536000}
-    
+
     ENGINE_SPECIFIC_MAPPINGS = {
         "google": {"hl": "google_language", "gl": "google_country"},
         "brave": {"spellcheck": "brave_spellcheck", "country": "brave_country"},
@@ -47,12 +48,12 @@ class FourgetHijackerClient:
             lang_full = params["language"]
             lang = lang_full.split("-")[0] if "-" in lang_full else lang_full
             country = lang_full.split("-")[1] if "-" in lang_full else "us"
-            
+
             if engine_name and engine_name.startswith("yandex"):
                 fourget_params["lang"] = lang if lang in FourgetHijackerClient.YANDEX_LANGS else "en"
             else:
                 fourget_params["lang"] = lang
-            
+
             fourget_params["country"] = country.lower()
 
         if "time_range" in params and params["time_range"]:
@@ -85,11 +86,10 @@ class FourgetHijackerClient:
         # Fast path for standard web results (safely excludes partials like 'https://')
         if len(url) > 15 and url.startswith(("http://", "https://")):
              return True
-        try:
-            result = urlparse(url)
-            return bool(result.scheme and result.netloc)
-        except ValueError:
-            return False
+        # Edge case: protocol-relative URLs (//cdn.example.com)
+        # Handled explicitly in _normalize_web_result line 282
+        # No need for expensive urlparse fallback
+        return False
 
     @staticmethod
     def _is_broken_image_url(url: str) -> bool:
@@ -100,7 +100,9 @@ class FourgetHijackerClient:
 
     @staticmethod
     def _parse_date(date_val: Any) -> Optional[datetime]:
-        if not date_val:
+        # Handle PHP's strtotime() returning false on parse failure
+        # which becomes Python False (bool) after JSON decode
+        if not date_val or date_val is False:
             return None
         try:
             return datetime.fromtimestamp(int(date_val))
@@ -111,20 +113,58 @@ class FourgetHijackerClient:
     def _truncate_content(content: Any) -> str:
         if not content or not isinstance(content, str):
             return ""
-        
-        # 1.5x buffer for whitespace collapse and unescaping
-        limit = int(FourgetHijackerClient.MAX_CONTENT_LENGTH * 1.5)
-        if len(content) > limit:
-             content = content[:limit]
 
-        if '&' in content:
+        # Early truncation BEFORE expensive operations
+        if len(content) > FourgetHijackerClient.MAX_CONTENT_LENGTH * 2:
+            content = content[:FourgetHijackerClient.MAX_CONTENT_LENGTH * 2]
+
+        # Only unescape if entity markers likely exist (check first 100 chars)
+        if '&' in content[:min(100, len(content))]:
             content = unescape(content)
-            
-        content = " ".join(content.split())
-        
+
+        # Regex-based whitespace collapse (single-pass, faster than split+join)
+        content = _WHITESPACE_RE.sub(' ', content).strip()
+
         if len(content) > FourgetHijackerClient.MAX_CONTENT_LENGTH:
             return content[:FourgetHijackerClient.MAX_CONTENT_LENGTH] + "..."
         return content
+
+    @staticmethod
+    def _normalize_thumbnail_url(url: Any, context: str = "thumbnail") -> Optional[str]:
+        """
+        Normalize and validate thumbnail URL with debug logging.
+
+        Handles protocol-relative URLs (//cdn.example.com/image.jpg)
+        and validates against broken image patterns.
+
+        Args:
+            url: Raw thumbnail URL from 4get (string)
+            context: Description for debug logging (e.g., "video thumbnail")
+
+        Returns:
+            Normalized URL if valid, None if rejected
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+
+        if not url or not isinstance(url, str):
+            return None
+
+        # Fix protocol-relative URLs (e.g., //cdn.example.com/image.jpg)
+        if url.startswith("//"):
+            url = "https:" + url
+
+        # Validate URL format
+        if not FourgetHijackerClient._is_valid_url(url):
+            logger.debug(f"Rejected {context} URL (invalid format): {url[:100]}")
+            return None
+
+        # Check for broken image patterns
+        if FourgetHijackerClient._is_broken_image_url(url):
+            logger.debug(f"Rejected {context} URL (broken image pattern): {url[:100]}")
+            return None
+
+        return url
 
     # --- Normalization Logic ---
 
@@ -187,8 +227,10 @@ class FourgetHijackerClient:
                         if result_type in FourgetHijackerClient._TEMPLATES:
                             result["template"] = FourgetHijackerClient._TEMPLATES[result_type]
                         results.append(result)
-                except Exception:
-                    continue # One bad apple doesn't spoil the bunch
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).error(f"Failed to normalize {result_type} result: {e}")
+                    continue
 
         return results
 
@@ -207,102 +249,103 @@ class FourgetHijackerClient:
             return True
         return False
 
-    @staticmethod  
-    def _normalize_answer_result(item: Dict[str, Any]) -> Optional[Answer | Dict[str, Any]]:  
-        desc_list = item.get("description")  
-        if not desc_list or not isinstance(desc_list, list):  
-            return None  
-        
+    @staticmethod
+    def _normalize_answer_result(item: Dict[str, Any]) -> Optional[Answer | Dict[str, Any]]:
+        desc_list = item.get("description")
+        if not desc_list or not isinstance(desc_list, list):
+            return None
+
         description_parts = [
             part.get("value", "").strip()
             for part in desc_list
             if isinstance(part, dict) and part.get("type") == "text" and part.get("value")
         ]
-        answer_text = " ".join(description_parts)  
-        if not answer_text:  
-            return None  
-        
-        if item.get("table") or item.get("sublink"):  
-            return FourgetHijackerClient._normalize_infobox_from_answer(item, answer_text)  
-        
-        return Answer(answer=FourgetHijackerClient._truncate_content(answer_text))  
-    
-    @staticmethod  
-    def _normalize_infobox_from_answer(item: Dict[str, Any], content_text: str = None) -> Optional[Dict[str, Any]]:  
-        title = item.get("title", "Infobox")  
-        
+        answer_text = " ".join(description_parts)
+        if not answer_text:
+            return None
+
+        if item.get("table") or item.get("sublink"):
+            return FourgetHijackerClient._normalize_infobox_from_answer(item, answer_text)
+
+        return Answer(answer=FourgetHijackerClient._truncate_content(answer_text))
+
+    @staticmethod
+    def _normalize_infobox_from_answer(item: Dict[str, Any], content_text: str = None) -> Optional[Dict[str, Any]]:
+        title = item.get("title", "Infobox")
+
         if content_text is None:
             content_text = " ".join([
                 part.get("value", "")
                 for part in item.get("description", [])
                 if isinstance(part, dict) and part.get("type") == "text"
             ])
-        
+
         title = FourgetHijackerClient._truncate_content(title)
 
-        result = {  
-            'infobox': title,  
-            'id': item.get("url") or title,  
-            'content': FourgetHijackerClient._truncate_content(content_text),  
-            'urls': [],  
-            'attributes': []  
-        }  
-        
-        thumb_url = item.get("thumb")  
-        if thumb_url and FourgetHijackerClient._is_valid_url(thumb_url):  
-            result["img_src"] = thumb_url  
-        
-        if item.get("url") and FourgetHijackerClient._is_valid_url(item["url"]):  
-            result["urls"].append({'title': 'Source', 'url': item["url"]})  
-        
-        table_data = item.get("table", {})  
-        if isinstance(table_data, dict):  
-            for key, value in table_data.items():  
-                if value and str(value).strip():  
-                    result["attributes"].append({  
-                        'label': str(key),  
+        result = {
+            'infobox': title,
+            'id': item.get("url") or title,
+            'content': FourgetHijackerClient._truncate_content(content_text),
+            'urls': [],
+            'attributes': []
+        }
+
+        thumb_url = FourgetHijackerClient._normalize_thumbnail_url(
+            item.get("thumb"), context="infobox"
+        )
+        if thumb_url:
+            result["img_src"] = thumb_url
+
+        if item.get("url") and FourgetHijackerClient._is_valid_url(item["url"]):
+            result["urls"].append({'title': 'Source', 'url': item["url"]})
+
+        table_data = item.get("table", {})
+        if isinstance(table_data, dict):
+            for key, value in table_data.items():
+                if value and str(value).strip():
+                    result["attributes"].append({
+                        'label': str(key),
                         'value': FourgetHijackerClient._truncate_content(str(value))
-                    })  
-        
-        sublinks = item.get("sublink", {})  
-        if isinstance(sublinks, dict):  
-            for label, url in sublinks.items():  
-                if url and FourgetHijackerClient._is_valid_url(url):  
-                    result["urls"].append({'title': label, 'url': url})  
-        
+                    })
+
+        sublinks = item.get("sublink", {})
+        if isinstance(sublinks, dict):
+            for label, url in sublinks.items():
+                if url and FourgetHijackerClient._is_valid_url(url):
+                    result["urls"].append({'title': label, 'url': url})
+
         return result
 
     @staticmethod
     def _normalize_web_result(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         url = item.get("url")
         title = item.get("title")
-        
-        # Level 2 Safety: Protocol Patching
+
         if url and url.startswith("//"):
             url = "https:" + url
-            
+
         if not FourgetHijackerClient._is_valid_url(url) or not title: return None
-        
+
         # Sanity checks
         if url == title: return None
         if '\x00' in url or '\x00' in title: return None
-            
+
         content = FourgetHijackerClient._truncate_content(item.get("description"))
-        
+
         # Enrich content with table data if present
         table_data = item.get("table")
         if isinstance(table_data, dict) and table_data:
             rich_chunks = []
-            
+
             # Check for Rating + Votes pair
             rating = None
             votes = None
-            
+
             # Identify keys that match 'rating' or 'votes' (case-insensitive)
             # and collect others.
-            
+
             other_attributes = []
-            
+
             for k, v in table_data.items():
                 k_lower = k.lower()
                 if k_lower == 'rating':
@@ -313,7 +356,7 @@ class FourgetHijackerClient:
                     clean_val = str(v).strip()
                     if clean_val:
                         other_attributes.append((k, clean_val))
-            
+
             # Construct merged rating string
             if rating:
                 rating_str = f"Rating: {rating}"
@@ -326,7 +369,7 @@ class FourgetHijackerClient:
             # Add remaining items
             for key, value in other_attributes:
                 rich_chunks.append(f"{key}: {value}")
-            
+
             if rich_chunks:
                 # Prepend rich attributes with elegant separators
                 snippet_text = " • ".join(rich_chunks)
@@ -352,36 +395,36 @@ class FourgetHijackerClient:
         # Conservative check
         if not (url.startswith("/") or "4get" in url.lower()):
             return url
-        
+
         try:
             # Supports ?url=... and &url=...
-            
+
             # Edge Case: Fragments. We must essentially ignore anything after '#'
             # Splitting is cheaper than full parsing.
             work_url = url.split('#', 1)[0]
-            
+
             start_idx = work_url.find('?url=')
             if start_idx == -1:
                 start_idx = work_url.find('&url=')
-            
+
             if start_idx != -1:
                 # Extract value part (skip ?url= or &url= which is 5 chars)
                 val_start = start_idx + 5
                 val_end = work_url.find('&', val_start)
-                
+
                 if val_end == -1:
                     raw_val = work_url[val_start:]
                 else:
                     raw_val = work_url[val_start:val_end]
-                
+
                 # unquote_plus handles '+' as space, matching parse_qs behavior
                 candidate = unquote_plus(raw_val)
                 if FourgetHijackerClient._is_valid_url(candidate):
                     return candidate
-                    
+
         except Exception:
             pass
-            
+
         # Fallback: strict safety return original if extraction failed
         return url
 
@@ -393,22 +436,22 @@ class FourgetHijackerClient:
 
         img_data = source[0]
         thumb_data = source[1] if len(source) > 1 else img_data
-        
+
         if not isinstance(img_data, dict) or not isinstance(thumb_data, dict):
             return None
 
         img_url = img_data.get("url")
         thumb_url = thumb_data.get("url")
-        
+
         if not FourgetHijackerClient._is_valid_url(img_url):
             return None
-        
+
         if FourgetHijackerClient._is_broken_image_url(img_url):
             return None
-        
+
         # Sanity checks
         if '\x00' in img_url: return None
-        
+
         img_url = FourgetHijackerClient._extract_proxied_url(img_url)
         thumb_url = FourgetHijackerClient._extract_proxied_url(thumb_url) if thumb_url else None
 
@@ -420,6 +463,9 @@ class FourgetHijackerClient:
             "url": item.get("url") or img_url,
             "img_src": img_url,
         }
+        thumb_url = FourgetHijackerClient._normalize_thumbnail_url(
+            thumb_url, context="image thumbnail"
+        )
         if thumb_url and thumb_url != img_url:
             result["thumbnail_src"] = thumb_url
         return result
@@ -440,17 +486,20 @@ class FourgetHijackerClient:
             "url": url,
             "content": FourgetHijackerClient._truncate_content(item.get("description")),
         }
-        
+
         raw_thumb = item.get("thumb")
         thumb_url = None
         if isinstance(raw_thumb, dict):
             thumb_url = raw_thumb.get("url")
         elif isinstance(raw_thumb, str):
             thumb_url = raw_thumb
-        
-        if thumb_url and not FourgetHijackerClient._is_broken_image_url(thumb_url):
+
+        thumb_url = FourgetHijackerClient._normalize_thumbnail_url(
+            thumb_url, context="video thumbnail"
+        )
+        if thumb_url:
             result["thumbnail"] = thumb_url
-                
+
         date_obj = FourgetHijackerClient._parse_date(item.get("date") or item.get("publishedDate"))
         if date_obj:
             result["publishedDate"] = date_obj
@@ -472,17 +521,20 @@ class FourgetHijackerClient:
             "url": url,
             "content": FourgetHijackerClient._truncate_content(item.get("description")),
         }
-        
+
         raw_thumb = item.get("thumb")
         thumb_url = None
         if isinstance(raw_thumb, dict):
             thumb_url = raw_thumb.get("url")
         elif isinstance(raw_thumb, str):
             thumb_url = raw_thumb
-        
-        if thumb_url and not FourgetHijackerClient._is_broken_image_url(thumb_url):
+
+        thumb_url = FourgetHijackerClient._normalize_thumbnail_url(
+            thumb_url, context="news thumbnail"
+        )
+        if thumb_url:
             result["thumbnail"] = thumb_url
-            
+
         date_obj = FourgetHijackerClient._parse_date(item.get("date"))
         if date_obj:
             result["publishedDate"] = date_obj

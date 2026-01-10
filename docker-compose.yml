@@ -45,6 +45,12 @@ services:
     ports:
       - '8081:80'
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health.php || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     networks:
       - searxng-net
 networks:

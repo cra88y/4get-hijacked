@@ -165,7 +165,7 @@ def response(resp: "SXNG_Response"):
 
             results.append({'url': url, 'title': title, 'content': content})
 
-        except Exception as e:
+        except Exception:
             continue
 
     return results
