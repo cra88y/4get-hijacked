@@ -1,9 +1,17 @@
 # 4get-hijacked
 
-Routes [4get](https://git.lolcat.ca/lolcat/4get) scrapers through a PHP sidecar for use as SearXNG engines.
+Routes [4get](https://git.lolcat.ca/lolcat/4get) engines through a PHP sidecar for use as SearXNG engines.
+Feats:
+ - 4get engines can now be used in parallel (not possible normally)
+ - 4get rich meta data scraping is seamlessly normalized into compatible Searxng result types, including infoboxes, suggestions, etc.
+ - no modifications to searxng/4get made
+ - 4get cloned at build for upstream engine fixes
+ - literally doesn't even run 4get itself 
+ - searxng search parameters are still utilized (time range, safe search)
+ - 4get engine specifc params are settable in Settings.yml for the given engine
+ - containerized for super easy installing/updating
 
 ## Structure
-
 ```
 searx/engines/
   *-4get.py                    # SearXNG engine wrappers
