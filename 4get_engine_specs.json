@@ -1,0 +1,1834 @@
+{
+  "baidu": {
+    "inputs": [
+      "category",
+      "color",
+      "format",
+      "newer",
+      "npt",
+      "older",
+      "option",
+      "ratio",
+      "s",
+      "size",
+      "sort",
+      "type"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": true,
+      "nsfw": false,
+      "language": false,
+      "country": false
+    },
+    "outputs": {
+      "image": {
+        "title": true,
+        "url": true,
+        "source": true
+      },
+      "video": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "author": true
+      },
+      "livestream": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "author": true
+      },
+      "reel": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "author": true
+      },
+      "news": {
+        "title": true,
+        "url": true,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "author": false
+      }
+    }
+  },
+  "brave": {
+    "inputs": [
+      "country",
+      "newer",
+      "npt",
+      "nsfw",
+      "older",
+      "option",
+      "s",
+      "spellcheck"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": true,
+      "nsfw": true,
+      "language": false,
+      "country": true
+    },
+    "outputs": {
+      "web": {
+        "title": true,
+        "url": false,
+        "description": false,
+        "thumb": false,
+        "date": false,
+        "duration": true,
+        "views": true
+      },
+      "image": {
+        "title": true,
+        "url": true,
+        "description": false,
+        "thumb": false,
+        "date": false,
+        "duration": true,
+        "views": true,
+        "source": true
+      },
+      "video": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": true,
+        "author": true
+      },
+      "news": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": true,
+        "author": false
+      },
+      "livestream": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": true,
+        "author": true
+      },
+      "reel": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": true,
+        "author": true
+      }
+    }
+  },
+  "cara": {
+    "inputs": [
+      "category",
+      "fields",
+      "npt",
+      "option",
+      "s",
+      "software",
+      "sort",
+      "type"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": false,
+      "nsfw": false,
+      "language": false,
+      "country": false
+    },
+    "outputs": {
+      "image": {
+        "title": true,
+        "url": true,
+        "source": true
+      }
+    }
+  },
+  "coccoc": {
+    "inputs": [
+      "filter",
+      "npt",
+      "nsfw",
+      "option",
+      "s",
+      "time"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": true,
+      "nsfw": true,
+      "language": false,
+      "country": false
+    },
+    "outputs": {
+      "web": {
+        "title": true,
+        "url": false,
+        "description": false,
+        "thumb": true,
+        "date": false,
+        "duration": true,
+        "views": false,
+        "author": true
+      },
+      "image": {
+        "title": true,
+        "url": false,
+        "description": false,
+        "thumb": true,
+        "date": false,
+        "duration": true,
+        "views": false,
+        "author": true
+      },
+      "video": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "author": true
+      },
+      "news": {
+        "title": true,
+        "url": false,
+        "description": false,
+        "thumb": true,
+        "date": false,
+        "duration": true,
+        "views": false,
+        "author": true
+      },
+      "livestream": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "author": true
+      },
+      "reel": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "author": true
+      }
+    }
+  },
+  "crowdview": {
+    "inputs": [
+      "s"
+    ],
+    "capabilities": {
+      "paging": false,
+      "time": false,
+      "nsfw": false,
+      "language": false,
+      "country": false
+    },
+    "outputs": {
+      "web": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true
+      },
+      "image": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true
+      },
+      "video": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true
+      },
+      "news": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true
+      }
+    }
+  },
+  "curlie": {
+    "inputs": [
+      "lang",
+      "npt",
+      "option",
+      "s"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": false,
+      "nsfw": false,
+      "language": true,
+      "country": false
+    },
+    "outputs": {
+      "web": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false
+      },
+      "image": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false
+      },
+      "video": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false
+      },
+      "news": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false
+      }
+    }
+  },
+  "ddg": {
+    "inputs": [
+      "color",
+      "country",
+      "date",
+      "duration",
+      "extendedsearch",
+      "layout",
+      "license",
+      "newer",
+      "npt",
+      "nsfw",
+      "older",
+      "option",
+      "resolution",
+      "s",
+      "size",
+      "type"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": true,
+      "nsfw": true,
+      "language": false,
+      "country": true
+    },
+    "outputs": {
+      "image": {
+        "title": true,
+        "url": true,
+        "source": true
+      },
+      "video": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": true,
+        "author": true
+      },
+      "livestream": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": true,
+        "author": true
+      },
+      "reel": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": true,
+        "author": true
+      },
+      "news": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "author": true
+      }
+    }
+  },
+  "facebook": {
+    "inputs": [
+      "live",
+      "newer",
+      "npt",
+      "older",
+      "option",
+      "s",
+      "sort"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": true,
+      "nsfw": false,
+      "language": false,
+      "country": false
+    },
+    "outputs": {
+      "video": {
+        "author": true
+      },
+      "livestream": {
+        "author": true
+      },
+      "reel": {
+        "author": true
+      }
+    }
+  },
+  "fivehpx": {
+    "inputs": [
+      "npt",
+      "option",
+      "s",
+      "sort"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": false,
+      "nsfw": false,
+      "language": false,
+      "country": false
+    },
+    "outputs": {
+      "image": {
+        "title": true,
+        "url": true,
+        "source": true
+      }
+    }
+  },
+  "flickr": {
+    "inputs": [
+      "color",
+      "license",
+      "npt",
+      "nsfw",
+      "option",
+      "s",
+      "sort",
+      "style"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": false,
+      "nsfw": true,
+      "language": false,
+      "country": false
+    },
+    "outputs": {
+      "image": {
+        "title": true,
+        "url": true,
+        "source": true
+      }
+    }
+  },
+  "ftm": {
+    "inputs": [
+      "npt",
+      "s"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": false,
+      "nsfw": false,
+      "language": false,
+      "country": false
+    },
+    "outputs": {
+      "image": {
+        "title": true,
+        "url": true,
+        "source": true
+      }
+    }
+  },
+  "ghostery": {
+    "inputs": [
+      "country",
+      "npt",
+      "option",
+      "s"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": false,
+      "nsfw": false,
+      "language": false,
+      "country": true
+    },
+    "outputs": {
+      "web": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false
+      },
+      "image": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false
+      },
+      "video": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false
+      },
+      "news": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false
+      }
+    }
+  },
+  "google": {
+    "inputs": [
+      "captions",
+      "color",
+      "country",
+      "duration",
+      "format",
+      "lang",
+      "newer",
+      "npt",
+      "nsfw",
+      "older",
+      "option",
+      "quality",
+      "ratio",
+      "rights",
+      "s",
+      "size",
+      "sort",
+      "spellcheck",
+      "time",
+      "type"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": true,
+      "nsfw": true,
+      "language": true,
+      "country": true
+    },
+    "outputs": {
+      "web": {
+        "title": true,
+        "url": false,
+        "description": false,
+        "thumb": true,
+        "date": false
+      },
+      "image": {
+        "title": true,
+        "url": true,
+        "description": false,
+        "thumb": true,
+        "date": false,
+        "source": true
+      },
+      "video": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "author": true
+      },
+      "news": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "author": true
+      },
+      "livestream": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "author": true
+      },
+      "reel": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "author": true
+      }
+    }
+  },
+  "google_api": {
+    "inputs": [
+      "country",
+      "lang",
+      "newer",
+      "npt",
+      "nsfw",
+      "option",
+      "rm_dupes",
+      "s",
+      "sort"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": true,
+      "nsfw": true,
+      "language": true,
+      "country": true
+    },
+    "outputs": {
+      "web": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true
+      },
+      "image": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true
+      },
+      "video": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true
+      },
+      "news": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true
+      }
+    }
+  },
+  "google_cse": {
+    "inputs": [
+      "color",
+      "country",
+      "format",
+      "lang",
+      "npt",
+      "nsfw",
+      "option",
+      "redundant",
+      "s",
+      "size",
+      "sort",
+      "spellcheck"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": false,
+      "nsfw": true,
+      "language": true,
+      "country": true
+    },
+    "outputs": {
+      "web": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "source": true
+      },
+      "image": {
+        "title": true,
+        "url": true,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "source": true
+      },
+      "video": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "source": true
+      },
+      "news": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "source": true
+      }
+    }
+  },
+  "greppr": {
+    "inputs": [
+      "npt",
+      "s"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": false,
+      "nsfw": false,
+      "language": false,
+      "country": false
+    },
+    "outputs": {
+      "web": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true
+      },
+      "image": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true
+      },
+      "video": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true
+      },
+      "news": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true
+      }
+    }
+  },
+  "imgur": {
+    "inputs": [
+      "format",
+      "npt",
+      "option",
+      "s",
+      "size",
+      "sort",
+      "time"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": true,
+      "nsfw": false,
+      "language": false,
+      "country": false
+    },
+    "outputs": {
+      "image": {
+        "title": true,
+        "url": true,
+        "source": true
+      }
+    }
+  },
+  "marginalia": {
+    "inputs": [
+      "adtech",
+      "affiliate",
+      "cookies",
+      "file",
+      "format",
+      "intitle",
+      "javascript",
+      "npt",
+      "option",
+      "recent",
+      "s",
+      "trackers"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": false,
+      "nsfw": false,
+      "language": false,
+      "country": false
+    },
+    "outputs": {
+      "web": {
+        "title": true,
+        "url": false,
+        "description": false,
+        "thumb": true,
+        "date": false
+      },
+      "image": {
+        "title": true,
+        "url": false,
+        "description": false,
+        "thumb": true,
+        "date": false
+      },
+      "video": {
+        "title": true,
+        "url": false,
+        "description": false,
+        "thumb": true,
+        "date": false
+      },
+      "news": {
+        "title": true,
+        "url": false,
+        "description": false,
+        "thumb": true,
+        "date": false
+      }
+    }
+  },
+  "mojeek": {
+    "inputs": [
+      "country",
+      "domain",
+      "focus",
+      "lang",
+      "npt",
+      "option",
+      "region",
+      "s"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": false,
+      "nsfw": false,
+      "language": true,
+      "country": true
+    },
+    "outputs": {
+      "web": {
+        "title": false,
+        "url": false,
+        "description": false,
+        "thumb": false,
+        "date": false
+      },
+      "image": {
+        "title": false,
+        "url": false,
+        "description": false,
+        "thumb": false,
+        "date": false
+      },
+      "video": {
+        "title": false,
+        "url": false,
+        "description": false,
+        "thumb": false,
+        "date": false
+      },
+      "news": {
+        "title": false,
+        "url": false,
+        "description": false,
+        "thumb": false,
+        "date": false,
+        "author": false
+      }
+    }
+  },
+  "mwmbl": {
+    "inputs": [
+      "s"
+    ],
+    "capabilities": {
+      "paging": false,
+      "time": false,
+      "nsfw": false,
+      "language": false,
+      "country": false
+    },
+    "outputs": {
+      "web": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false
+      },
+      "image": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false
+      },
+      "video": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false
+      },
+      "news": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false
+      }
+    }
+  },
+  "pinterest": {
+    "inputs": [
+      "npt",
+      "s"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": false,
+      "nsfw": false,
+      "language": false,
+      "country": false
+    },
+    "outputs": {
+      "image": {
+        "title": true,
+        "url": true,
+        "source": true
+      }
+    }
+  },
+  "qwant": {
+    "inputs": [
+      "color",
+      "country",
+      "extendedsearch",
+      "imagetype",
+      "license",
+      "npt",
+      "nsfw",
+      "option",
+      "order",
+      "s",
+      "size",
+      "source",
+      "time"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": true,
+      "nsfw": true,
+      "language": false,
+      "country": true
+    },
+    "outputs": {
+      "web": {
+        "title": true,
+        "url": false,
+        "description": false,
+        "thumb": true,
+        "date": false,
+        "duration": true,
+        "views": false,
+        "source": true
+      },
+      "image": {
+        "title": true,
+        "url": true,
+        "description": false,
+        "thumb": true,
+        "date": false,
+        "duration": true,
+        "views": false,
+        "source": true
+      },
+      "video": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "source": true,
+        "author": true
+      },
+      "news": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "source": true,
+        "author": true
+      },
+      "livestream": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "author": true
+      },
+      "reel": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "author": true
+      }
+    }
+  },
+  "sc": {
+    "inputs": [
+      "npt",
+      "option",
+      "s",
+      "type"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": false,
+      "nsfw": false,
+      "language": false,
+      "country": false
+    },
+    "outputs": {
+      "song": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": true,
+        "author": true
+      },
+      "album": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": true,
+        "author": true
+      },
+      "playlist": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": true,
+        "author": true
+      },
+      "podcast": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": true,
+        "author": true
+      }
+    }
+  },
+  "sepiasearch": {
+    "inputs": [
+      "category",
+      "display",
+      "duration",
+      "language",
+      "license",
+      "newer",
+      "npt",
+      "nsfw",
+      "option",
+      "s",
+      "sort",
+      "type"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": true,
+      "nsfw": true,
+      "language": true,
+      "country": false
+    },
+    "outputs": {
+      "video": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "author": true
+      },
+      "livestream": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "author": true
+      },
+      "reel": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "author": true
+      }
+    }
+  },
+  "solofield": {
+    "inputs": [
+      "npt",
+      "nsfw",
+      "option",
+      "s"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": false,
+      "nsfw": true,
+      "language": false,
+      "country": false
+    },
+    "outputs": {
+      "web": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false
+      },
+      "image": {
+        "title": false,
+        "url": true,
+        "description": true,
+        "thumb": true,
+        "date": false,
+        "source": true
+      },
+      "video": {
+        "title": true,
+        "url": false,
+        "description": false,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "author": true
+      },
+      "news": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false
+      },
+      "livestream": {
+        "title": true,
+        "url": false,
+        "description": false,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "author": true
+      },
+      "reel": {
+        "title": true,
+        "url": false,
+        "description": false,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "author": true
+      }
+    }
+  },
+  "spotify": {
+    "inputs": [
+      "category",
+      "option",
+      "s"
+    ],
+    "capabilities": {
+      "paging": false,
+      "time": false,
+      "nsfw": false,
+      "language": false,
+      "country": false
+    },
+    "outputs": {
+      "song": {
+        "title": true,
+        "url": false,
+        "description": false,
+        "thumb": true,
+        "date": false,
+        "duration": false,
+        "views": false,
+        "author": true
+      },
+      "album": {
+        "title": true,
+        "url": false,
+        "description": false,
+        "thumb": true,
+        "date": false,
+        "duration": false,
+        "views": false,
+        "author": true
+      },
+      "playlist": {
+        "title": true,
+        "url": false,
+        "description": false,
+        "thumb": true,
+        "date": false,
+        "duration": false,
+        "views": false,
+        "author": true
+      },
+      "podcast": {
+        "title": true,
+        "url": false,
+        "description": false,
+        "thumb": true,
+        "date": false,
+        "duration": false,
+        "views": false,
+        "author": true
+      }
+    }
+  },
+  "startpage": {
+    "inputs": [
+      "color",
+      "country",
+      "duration",
+      "extendedsearch",
+      "license",
+      "npt",
+      "nsfw",
+      "option",
+      "s",
+      "size",
+      "sort",
+      "time",
+      "type"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": true,
+      "nsfw": true,
+      "language": false,
+      "country": true
+    },
+    "outputs": {
+      "web": {
+        "title": true,
+        "url": false,
+        "description": false,
+        "thumb": false,
+        "date": false,
+        "duration": false,
+        "views": false,
+        "source": true
+      },
+      "image": {
+        "title": true,
+        "url": true,
+        "description": false,
+        "thumb": false,
+        "date": false,
+        "duration": false,
+        "views": false,
+        "source": true
+      },
+      "video": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": true,
+        "source": true,
+        "author": true
+      },
+      "news": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": false,
+        "views": false,
+        "source": true,
+        "author": true
+      },
+      "livestream": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": true,
+        "author": true
+      },
+      "reel": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": true,
+        "author": true
+      }
+    }
+  },
+  "swisscows": {
+    "inputs": [
+      "npt",
+      "option",
+      "s",
+      "type"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": false,
+      "nsfw": false,
+      "language": false,
+      "country": false
+    },
+    "outputs": {
+      "song": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": false,
+        "date": false,
+        "duration": true,
+        "views": false,
+        "author": true
+      },
+      "album": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": false,
+        "date": false,
+        "duration": true,
+        "views": false,
+        "author": true
+      },
+      "playlist": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": false,
+        "date": false,
+        "duration": true,
+        "views": false,
+        "author": true
+      },
+      "podcast": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": false,
+        "date": false,
+        "duration": true,
+        "views": false,
+        "author": true
+      }
+    }
+  },
+  "vimeo": {
+    "inputs": [
+      "category",
+      "collection",
+      "display",
+      "duration",
+      "hdr",
+      "license",
+      "live",
+      "npt",
+      "option",
+      "price",
+      "resolution",
+      "s",
+      "sort",
+      "time",
+      "vimeo_360"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": true,
+      "nsfw": false,
+      "language": false,
+      "country": false
+    },
+    "outputs": {
+      "video": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false,
+        "duration": false,
+        "views": false,
+        "author": true
+      },
+      "livestream": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false,
+        "duration": false,
+        "views": false,
+        "author": true
+      },
+      "reel": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false,
+        "duration": false,
+        "views": false,
+        "author": true
+      }
+    }
+  },
+  "vsco": {
+    "inputs": [
+      "npt",
+      "query",
+      "s"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": false,
+      "nsfw": false,
+      "language": false,
+      "country": false
+    },
+    "outputs": {
+      "image": {
+        "title": true,
+        "url": true,
+        "source": true
+      }
+    }
+  },
+  "wiby": {
+    "inputs": [
+      "date",
+      "npt",
+      "nsfw",
+      "option",
+      "s"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": true,
+      "nsfw": true,
+      "language": false,
+      "country": false
+    },
+    "outputs": {
+      "web": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false
+      },
+      "image": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false
+      },
+      "video": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false
+      },
+      "news": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false
+      }
+    }
+  },
+  "yahoo_japan": {
+    "inputs": [
+      "npt",
+      "s"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": false,
+      "nsfw": false,
+      "language": false,
+      "country": false
+    },
+    "outputs": {
+      "web": {
+        "title": true,
+        "url": false,
+        "description": false,
+        "thumb": true,
+        "date": false,
+        "duration": true,
+        "views": false,
+        "source": true
+      },
+      "image": {
+        "title": true,
+        "url": true,
+        "description": false,
+        "thumb": true,
+        "date": false,
+        "duration": true,
+        "views": false,
+        "source": true
+      },
+      "video": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "source": true,
+        "author": true
+      },
+      "news": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "source": true,
+        "author": false
+      },
+      "livestream": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "author": true
+      },
+      "reel": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": false,
+        "author": true
+      }
+    }
+  },
+  "yandex": {
+    "inputs": [
+      "color",
+      "duration",
+      "format",
+      "lang",
+      "layout",
+      "newer",
+      "npt",
+      "nsfw",
+      "older",
+      "option",
+      "s",
+      "size",
+      "time",
+      "type"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": true,
+      "nsfw": true,
+      "language": true,
+      "country": false
+    },
+    "outputs": {
+      "web": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false
+      },
+      "image": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false
+      },
+      "video": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": true,
+        "author": true
+      },
+      "news": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false
+      },
+      "livestream": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": true,
+        "author": true
+      },
+      "reel": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "duration": true,
+        "views": true,
+        "author": true
+      }
+    }
+  },
+  "yep": {
+    "inputs": [
+      "country",
+      "nsfw",
+      "option",
+      "s"
+    ],
+    "capabilities": {
+      "paging": false,
+      "time": false,
+      "nsfw": true,
+      "language": false,
+      "country": true
+    },
+    "outputs": {
+      "web": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false,
+        "source": true
+      },
+      "image": {
+        "title": true,
+        "url": true,
+        "description": true,
+        "thumb": true,
+        "date": false,
+        "source": true
+      },
+      "video": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": false,
+        "source": true
+      },
+      "news": {
+        "title": true,
+        "url": false,
+        "description": true,
+        "thumb": true,
+        "date": true,
+        "source": true,
+        "author": false
+      }
+    }
+  },
+  "yt": {
+    "inputs": [
+      "date",
+      "duration",
+      "feature",
+      "npt",
+      "option",
+      "s",
+      "sort",
+      "sp",
+      "type"
+    ],
+    "capabilities": {
+      "paging": true,
+      "time": true,
+      "nsfw": false,
+      "language": false,
+      "country": false
+    },
+    "outputs": {
+      "video": {
+        "title": true,
+        "url": true,
+        "description": false,
+        "thumb": true,
+        "date": false,
+        "duration": false,
+        "views": false,
+        "author": true
+      },
+      "livestream": {
+        "title": true,
+        "url": true,
+        "description": false,
+        "thumb": true,
+        "date": false,
+        "duration": false,
+        "views": false,
+        "author": true
+      },
+      "reel": {
+        "title": true,
+        "url": true,
+        "description": false,
+        "thumb": true,
+        "date": false,
+        "duration": false,
+        "views": false,
+        "author": true
+      }
+    }
+  }
+}

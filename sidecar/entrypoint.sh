@@ -24,4 +24,8 @@ else
     echo "⚠️  Config file not found at $CONFIG_FILE. Skipping UA patch."
 fi
 
+# 3. Synchronize Manifest
+echo "📦 Synchronizing manifest with scrapers..."
+php /var/www/html/generate_manifest.php
+
 exec "$@"

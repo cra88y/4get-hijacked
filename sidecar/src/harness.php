@@ -1,9 +1,7 @@
 <?php
-// Start output buffering immediately to catch any PHP warnings/notices
 ob_start();
 
 ini_set('memory_limit', '256M');
-// Do not display errors to STDOUT, log them to STDERR instead
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
@@ -11,7 +9,6 @@ header('Content-Type: application/json');
 
 require_once 'mock.php';
 
-// Hijack include path
 set_include_path(__DIR__ . '/dummy_lib' . PATH_SEPARATOR . __DIR__ . '/4get-repo' . PATH_SEPARATOR . get_include_path());
 
 $raw_input = file_get_contents('php://input');
@@ -24,9 +21,9 @@ if (!$input) {
     exit;
 }
 
-$engine = preg_replace('/[^a-z0-9_]/', '', $input['engine'] ?? '');
+$engine_input = str_replace('-', '_', $input['engine'] ?? '');
+$engine = preg_replace('/[^a-z0-9_]/', '', $engine_input);
 
-// Cache manifest in APCu forever (cleared on container restart)
 $manifest = apcu_fetch('hijacker_manifest');
 if ($manifest === false) {
     $manifest = json_decode(file_get_contents(__DIR__ . '/manifest.json'), true);
@@ -41,7 +38,6 @@ if (!isset($manifest[$engine])) {
 
 $engine_config = $manifest[$engine];
 
-// Change directory so internal includes work
 chdir(__DIR__ . '/4get-repo');
 
 if (!file_exists($engine_config['file'])) {
@@ -70,14 +66,11 @@ $defaults = [
     'older' => false,
     'newer' => false,
     'spellcheck' => 'yes',
-    // Mojeek / General
     'focus' => 'any',
     'region' => 'any',
     'domain' => '1',
-    // Wiby / DDG
     'date' => 'any',
     'extendedsearch' => 'no',
-    // Marginalia
     'intitle' => 'no',
     'format' => 'any',
     'file' => 'any',
@@ -89,29 +82,56 @@ $defaults = [
     'recent' => 'no'
 ];
 
-// Optimization: Use + operator for array union (faster than array_merge for keyed arrays)
-// Input params (left) overwrite defaults (right), but + only adds missing keys.
-// So we must reverse it: $input + $defaults would mean input keeps its keys.
-// Wait, + operator: "$a + $b Union of $a and $b. The keys from the left-hand array will be preserved..."
-// So ($input['params'] ?? []) + $defaults Is correct. User input keys are preserved.
 $input_params = $input['params'] ?? [];
 $params = $input_params + $defaults;
 
-try {
-    // 4get engines use the 'web' method for standard searches
-    $result = $instance->web($params);
+backend::$context = [
+    'engine' => $engine,
+    's' => $params['s'] ?? '',
+    'offset' => $params['offset'] ?? 0
+];
 
-    // Debug logging (only count, skip expensive json_encode)
-    $webCount = isset($result['web']) ? count($result['web']) : 0;
-    if ($webCount === 0) {
-        error_log("Hijacker: Scraper '{$engine}' returned 0 results.");
+if (($params['offset'] ?? 0) > 0 && empty($params['npt'])) {
+    $det_key = md5($engine . ($params['s'] ?? '') . $params['offset']);
+    $stored_token = apcu_fetch("4get_det_$det_key");
+    
+    if ($stored_token) {
+        $params['npt'] = $stored_token;
+    } else {
+        ob_end_clean();
+        exit('[]');
+    }
+}
+
+try {
+    $method = $input['category'] ?? 'web';
+
+    if (!method_exists($instance, $method)) {
+        throw new Exception("Method '$method' not supported by engine '$engine'");
     }
 
-    // Clear the buffer (discard warnings) and send JSON
+    $result = $instance->$method($params);
+
+    $resultCount = 0;
+    if (isset($result[$method]) && is_array($result[$method])) {
+        $resultCount = count($result[$method]);
+    } elseif (isset($result['web']) && $method === 'web') {
+        $resultCount = count($result['web']);
+    }
+    
+    if ($resultCount === 0) {
+        error_log("Hijacker: Scraper '{$engine}' method '{$method}' returned 0 results.");
+    }
+
+    if (isset($result['npt'])) {
+        // It's already there, do nothing
+    } elseif (isset($instance->npt)) {
+        $result['npt'] = $instance->npt;
+    }
+
     ob_end_clean();
     echo json_encode($result);
 } catch (Throwable $e) {
-    // Clear buffer and send error JSON
     ob_end_clean();
     error_log("Hijacker Error: " . $e->getMessage());
     echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);

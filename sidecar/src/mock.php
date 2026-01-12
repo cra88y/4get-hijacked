@@ -1,46 +1,31 @@
 <?php
-// 1. Load 4get's HTML parser
 require_once __DIR__ . '/4get-repo/lib/fuckhtml.php';
-
-// 2. Load the Config (Patched by entrypoint.sh)
 require_once __DIR__ . '/4get-repo/data/config.php';
 
-/**
- * Backend Implementation
- * Uses APCu for state storage and Env Vars for proxies.
- */
 class backend {
+    public static $context = [];
+
     public function __construct($service) {
         if (!function_exists('apcu_store')) {
             error_log("CRITICAL: APCu is not enabled. State storage will fail.");
         }
     }
 
-    /**
-     * Selects a proxy from Environment Variable or Config
-     */
     public function get_ip() {
-        // 1. Check for Environment Variable (Easy Docker Config)
         $env_proxies = getenv('FOURGET_PROXIES');
         if ($env_proxies) {
-            // Expect comma-separated list: "ip:port,ip:port:user:pass"
             $proxies = explode(',', $env_proxies);
             return trim($proxies[array_rand($proxies)]);
         }
 
-        // 2. Fallback to 4get Config
         if (defined('config::PROXY_LIST') && !empty(config::PROXY_LIST)) {
             $proxies = config::PROXY_LIST;
             return $proxies[array_rand($proxies)];
         }
 
-        // 3. Fallback to direct connection
         return '127.0.0.1';
     }
 
-    /**
-     * Configures cURL to use the selected proxy.
-     */
     public function assign_proxy($curl, $proxy) {
         if ($proxy === '127.0.0.1' || empty($proxy)) {
             return;
@@ -58,9 +43,6 @@ class backend {
         curl_setopt($curl, CURLOPT_PROXYTYPE, CURLPROXY_HTTP);
     }
 
-    /**
-     * Stores state in RAM (APCu).
-     */
     public function store($url, $type, $proxy) {
         $token = bin2hex(random_bytes(16));
         $data = [
@@ -69,12 +51,19 @@ class backend {
             'cookies' => [] 
         ];
         apcu_store("4get_$token", $data, 3600);
+
+        if (!empty(self::$context)) {
+            $ctx = self::$context;
+            $current_offset = $ctx['offset'] ?? 0;
+            $next_offset = $current_offset + 10; 
+            
+            $key = md5(($ctx['engine'] ?? '') . ($ctx['s'] ?? '') . $next_offset);
+            apcu_store("4get_det_$key", $token, 3600);
+        }
+
         return $token;
     }
 
-    /**
-     * Retrieves state.
-     */
     public function get($token, $type) {
         $data = apcu_fetch("4get_$token");
         if ($data === false) {

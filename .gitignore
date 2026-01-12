@@ -1,5 +1,7 @@
 .agents/
+.agent/
 .kilocode/
+.vscode/
 4get-repo/
 searxng-repo/
 

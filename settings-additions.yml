@@ -3,80 +3,247 @@ engines:
     engine: google-4get
     enable_http: true    
     shortcut: g4g  
-    categories: general  
     timeout: 5.0  
     disabled: false  
+
   - name: brave4
     engine: brave-4get 
     enable_http: true   
     shortcut: b4g  
-    categories: general  
     timeout: 5.0  
-    disabled: false  
-    brave_spellcheck: 'yes'
+    disabled: false
+    fg_spellcheck: 'yes'
+
   - name: duckduckgo4
     enable_http: true  
     engine: duckduckgo-4get  
     shortcut: d4g  
-    categories: general  
     timeout: 2.0  
     disabled: false
-    ddg_extendedsearch: 'yes'
+    fg_extendedsearch: 'yes'
+
   - name: yandex4
     enable_http: true    
     engine: yandex-4get  
     shortcut: y4g  
-    categories: general  
     timeout: 3.0  
     disabled: false
-    yandex_language: 'en'
+    fg_lang: 'en'
+
   - name: mojeek4
     engine: mojeek-4get
     enable_http: true
-    shortcut: mj4g
-    categories: general
+    shortcut: mj4g    
     timeout: 2.0
     disabled: false
+
   - name: yep4
     engine: yep-4get
     enable_http: true
     shortcut: yp4g
-    categories: general
     timeout: 2.0
     disabled: false
+
   - name: marginalia4
     engine: marginalia-4get
     enable_http: true
     shortcut: mg4g
-    categories: general
     timeout: 2.0
     disabled: false
-    marginalia_intitle: 'no'
+    fg_intitle: 'no'
+
   - name: wiby4
     engine: wiby-4get
     enable_http: true
     shortcut: wb4g
-    categories: general
-    timeout: 2.0
+    timeout: 2.0  
     disabled: false
+
   - name: curlie4
     engine: curlie-4get
     enable_http: true
     shortcut: cl4g
-    categories: general
     timeout: 2.0
     disabled: false
+
   - name: baidu4
     engine: baidu-4get
     enable_http: true
     shortcut: bd4g
-    categories: general
     timeout: 2.0
     disabled: true
+
   - name: crowdview4
     engine: crowdview-4get
     enable_http: true
     shortcut: cv4g
-    categories: general
+    timeout: 2.0
+    disabled: false
+    
+  - name: cara4
+    engine: cara-4get
+    enable_http: true
+    shortcut: cr4g
+    timeout: 2.0
+    disabled: true
+
+  - name: coccoc4
+    engine: coccoc-4get
+    enable_http: true
+    shortcut: cc4g
+    timeout: 2.0
+    disabled: true
+
+  - name: facebook4
+    engine: facebook-4get
+    enable_http: true
+    shortcut: fb4g
+    timeout: 2.0
+    disabled: true
+
+  - name: fivehpx4
+    engine: fivehpx-4get
+    enable_http: true
+    shortcut: fh4g
+    timeout: 2.0
+    disabled: true
+
+  - name: flickr4
+    engine: flickr-4get
+    enable_http: true
+    shortcut: fk4g
+    timeout: 2.0
+    disabled: false
+
+  - name: ftm4
+    engine: ftm-4get
+    enable_http: true
+    shortcut: ft4g
+    timeout: 2.0
+    disabled: true
+
+  - name: ghostery4
+    engine: ghostery-4get
+    enable_http: true
+    shortcut: gh4g
+    timeout: 2.0
+    disabled: true
+
+  - name: google_api4
+    engine: google-api-4get
+    enable_http: true
+    shortcut: goa4g
+    timeout: 2.0
+    disabled: true
+
+  - name: google_cse4
+    engine: google-cse-4get
+    enable_http: true
+    shortcut: goc4g
+    timeout: 2.0
+    disabled: true
+
+  - name: greppr4
+    engine: greppr-4get
+    enable_http: true
+    shortcut: gp4g
+    timeout: 2.0
+    disabled: true
+
+  - name: imgur4
+    engine: imgur-4get
+    enable_http: true
+    shortcut: im4g
+    timeout: 2.0
+    disabled: false
+
+  - name: mwmbl4
+    engine: mwmbl-4get
+    enable_http: true
+    shortcut: mw4g
+    timeout: 2.0
+    disabled: true
+
+  - name: pinterest4
+    engine: pinterest-4get
+    enable_http: true
+    shortcut: pn4g
+    timeout: 2.0
+    disabled: false
+
+  - name: qwant4
+    engine: qwant-4get
+    enable_http: true
+    shortcut: qw4g
+    timeout: 2.0
+    disabled: true
+
+  - name: sc4
+    engine: sc-4get
+    enable_http: true
+    shortcut: sc4g
+    timeout: 2.0
+    disabled: false
+
+  - name: sepiasearch4
+    engine: sepiasearch-4get
+    enable_http: true
+    shortcut: ss4g
+    timeout: 2.0
+    disabled: true
+
+  - name: solofield4
+    engine: solofield-4get
+    enable_http: true
+    shortcut: sl4g
+    timeout: 2.0
+    disabled: true
+
+  - name: spotify4
+    engine: spotify-4get
+    enable_http: true
+    shortcut: sp4g
+    timeout: 2.0
+    disabled: false
+
+  - name: startpage4
+    engine: startpage-4get
+    enable_http: true
+    shortcut: stp4g
+    timeout: 2.0
+    disabled: true
+
+  - name: swisscows4
+    engine: swisscows-4get
+    enable_http: true
+    shortcut: sw4g
+    timeout: 2.0
+    disabled: true
+
+  - name: vimeo4
+    engine: vimeo-4get
+    enable_http: true
+    shortcut: vm4g
+    timeout: 2.0
+    disabled: false
+
+  - name: vsco4
+    engine: vsco-4get
+    enable_http: true
+    shortcut: vs4g
+    timeout: 2.0
+    disabled: true
+
+  - name: yahoo_japan4
+    engine: yahoo-japan-4get
+    enable_http: true
+    shortcut: yj4g
+    timeout: 2.0
+    disabled: true
+
+  - name: yt4
+    engine: yt-4get
+    enable_http: true
+    shortcut: yt4g
     timeout: 2.0
     disabled: false

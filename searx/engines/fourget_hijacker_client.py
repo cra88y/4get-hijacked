@@ -5,6 +5,9 @@ import time
 from urllib.parse import parse_qs, urlparse, unquote_plus
 from html import unescape
 from searx.result_types import Answer
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Pre-compiled regex patterns
 _BROKEN_IMAGE_RE = re.compile(
@@ -21,14 +24,6 @@ class FourgetHijackerClient:
     NSFW_MAP = {0: "yes", 1: "maybe", 2: "no"}
     TIME_MAPPINGS = {'day': 86400, 'week': 604800, 'month': 2592000, 'year': 31536000}
 
-    ENGINE_SPECIFIC_MAPPINGS = {
-        "google": {"hl": "google_language", "gl": "google_country"},
-        "brave": {"spellcheck": "brave_spellcheck", "country": "brave_country"},
-        "duckduckgo": {"extendedsearch": "ddg_extendedsearch", "country": "ddg_region"},
-        "yandex": {"lang": "yandex_language"},
-        "marginalia": {"recent": "marginalia_recent", "intitle": "marginalia_intitle"},
-        "baidu": {"category": "baidu_category"}
-    }
 
     YANDEX_LANGS = frozenset(["en", "ru", "be", "fr", "de", "id", "kk", "tt", "tr", "uk"])
 
@@ -37,8 +32,48 @@ class FourgetHijackerClient:
 
 
     @staticmethod
+    def dispatch_request(engine_id: str, query: str, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Centralized request handler for all 4get hijacked engines."""
+        fourget_params = FourgetHijackerClient.get_4get_params(query, params, engine_name=engine_id)
+
+        # Extract category from SearXNG params (dict or OnlineParams)
+        category = params.get('category', 'general') if hasattr(params, 'get') else 'general'
+        
+        if category == 'general' and hasattr(params, 'category'):
+            category = params.category
+
+        # Translate all SearXNG categories to 4get method names
+        if category == 'general':
+            category = 'web'
+        elif category == 'images':
+            category = 'image'
+        elif category == 'videos':
+            category = 'video'
+
+
+        params.update({
+            'url': 'http://4get-hijacked:80/harness.php',
+            'method': 'POST',
+            'json': {
+                'engine': engine_id,
+                'category': category,
+                'params': fourget_params
+            }
+        })
+        return params
+
+    @staticmethod
+    def dispatch_response(resp: Any, engine_id: str, logger: Any) -> list:
+        """Centralized response handler with error logging."""
+        try:
+            return FourgetHijackerClient.normalize_results(resp.json())
+        except Exception as e:
+            logger.error(f'4get {engine_id} response error: {e}')
+            return []
+
+    @staticmethod
     def get_4get_params(query: str, params: Dict[str, Any], engine_name: str = None) -> Dict[str, Any]:
-        """Build 4get params from SearXNG params. Sidecar handles filter defaults."""
+        """Build 4get params from SearXNG params."""
         fourget_params = {"s": query}
 
         if "safesearch" in params:
@@ -67,13 +102,13 @@ class FourgetHijackerClient:
         if pageno and pageno > 1:
             fourget_params["offset"] = (pageno - 1) * FourgetHijackerClient.DEFAULT_PAGE_SIZE
 
-        if engine_name:
-            base_engine = engine_name.replace("-4get", "").replace("4", "")
-            if base_engine in FourgetHijackerClient.ENGINE_SPECIFIC_MAPPINGS:
-                mappings = FourgetHijackerClient.ENGINE_SPECIFIC_MAPPINGS[base_engine]
-                for fourget_param, searxng_param in mappings.items():
-                    if searxng_param in params:
-                        fourget_params[fourget_param] = params[searxng_param]
+        prefix = "fg_"
+        for k, v in params.items():
+            if k.startswith(prefix):
+                raw_key = k[len(prefix):]
+                fourget_params[raw_key] = v
+
+
 
         return fourget_params
 
@@ -83,12 +118,8 @@ class FourgetHijackerClient:
     def _is_valid_url(url: Any) -> bool:
         if not url or not isinstance(url, str):
             return False
-        # Fast path for standard web results (safely excludes partials like 'https://')
         if len(url) > 15 and url.startswith(("http://", "https://")):
              return True
-        # Edge case: protocol-relative URLs (//cdn.example.com)
-        # Handled explicitly in _normalize_web_result line 282
-        # No need for expensive urlparse fallback
         return False
 
     @staticmethod
@@ -100,8 +131,6 @@ class FourgetHijackerClient:
 
     @staticmethod
     def _parse_date(date_val: Any) -> Optional[datetime]:
-        # Handle PHP's strtotime() returning false on parse failure
-        # which becomes Python False (bool) after JSON decode
         if not date_val or date_val is False:
             return None
         try:
@@ -114,7 +143,6 @@ class FourgetHijackerClient:
         if not content or not isinstance(content, str):
             return ""
 
-        # Early truncation BEFORE expensive operations
         if len(content) > FourgetHijackerClient.MAX_CONTENT_LENGTH * 2:
             content = content[:FourgetHijackerClient.MAX_CONTENT_LENGTH * 2]
 
@@ -122,7 +150,6 @@ class FourgetHijackerClient:
         if '&' in content[:min(100, len(content))]:
             content = unescape(content)
 
-        # Regex-based whitespace collapse (single-pass, faster than split+join)
         content = _WHITESPACE_RE.sub(' ', content).strip()
 
         if len(content) > FourgetHijackerClient.MAX_CONTENT_LENGTH:
@@ -131,35 +158,17 @@ class FourgetHijackerClient:
 
     @staticmethod
     def _normalize_thumbnail_url(url: Any, context: str = "thumbnail") -> Optional[str]:
-        """
-        Normalize and validate thumbnail URL with debug logging.
-
-        Handles protocol-relative URLs (//cdn.example.com/image.jpg)
-        and validates against broken image patterns.
-
-        Args:
-            url: Raw thumbnail URL from 4get (string)
-            context: Description for debug logging (e.g., "video thumbnail")
-
-        Returns:
-            Normalized URL if valid, None if rejected
-        """
-        import logging
-        logger = logging.getLogger(__name__)
-
+        """Normalize and validate thumbnail URL."""
         if not url or not isinstance(url, str):
             return None
 
-        # Fix protocol-relative URLs (e.g., //cdn.example.com/image.jpg)
         if url.startswith("//"):
             url = "https:" + url
 
-        # Validate URL format
         if not FourgetHijackerClient._is_valid_url(url):
             logger.debug(f"Rejected {context} URL (invalid format): {url[:100]}")
             return None
 
-        # Check for broken image patterns
         if FourgetHijackerClient._is_broken_image_url(url):
             logger.debug(f"Rejected {context} URL (broken image pattern): {url[:100]}")
             return None
@@ -202,14 +211,20 @@ class FourgetHijackerClient:
                     results.append(normalized_answer)
 
         # 4. Standard Results
-        # Use class constants for normalizers and templates
-        # Lazily populate normalizers if empty (to handle circular definition references)
         if not FourgetHijackerClient._NORMALIZERS:
             FourgetHijackerClient._NORMALIZERS = {
                 "web": FourgetHijackerClient._normalize_web_result,
                 "image": FourgetHijackerClient._normalize_image_result,
                 "video": FourgetHijackerClient._normalize_video_result,
                 "news": FourgetHijackerClient._normalize_news_result,
+                "livestream": FourgetHijackerClient._normalize_video_result,
+                "reel": FourgetHijackerClient._normalize_video_result,
+                "song": FourgetHijackerClient._normalize_media_result,
+                "podcast": FourgetHijackerClient._normalize_media_result,
+                "playlist": FourgetHijackerClient._normalize_web_result,
+                "album": FourgetHijackerClient._normalize_web_result,
+                "author": FourgetHijackerClient._normalize_web_result,
+                "user": FourgetHijackerClient._normalize_web_result,
             }
 
         current_ts = time.time()
@@ -228,8 +243,7 @@ class FourgetHijackerClient:
                             result["template"] = FourgetHijackerClient._TEMPLATES[result_type]
                         results.append(result)
                 except Exception as e:
-                    import logging
-                    logging.getLogger(__name__).error(f"Failed to normalize {result_type} result: {e}")
+                    logger.error(f"Failed to normalize {result_type} result: {e}")
                     continue
 
         return results
@@ -309,10 +323,19 @@ class FourgetHijackerClient:
                     })
 
         sublinks = item.get("sublink", {})
+        # Schema: sublink in infobox/answer can be a list of dicts [{"title": "...", "url": "..."}] 
+        # OR a dict {"Title": "Url"}
         if isinstance(sublinks, dict):
             for label, url in sublinks.items():
                 if url and FourgetHijackerClient._is_valid_url(url):
                     result["urls"].append({'title': label, 'url': url})
+        elif isinstance(sublinks, list):
+            for link_item in sublinks:
+                if isinstance(link_item, dict):
+                    sl_title = link_item.get("title")
+                    sl_url = link_item.get("url")
+                    if sl_title and sl_url and FourgetHijackerClient._is_valid_url(sl_url):
+                         result["urls"].append({'title': sl_title, 'url': sl_url})
 
         return result
 
@@ -334,16 +357,24 @@ class FourgetHijackerClient:
 
         # Enrich content with table data if present
         table_data = item.get("table")
-        if isinstance(table_data, dict) and table_data:
-            rich_chunks = []
+        rich_chunks = []
 
+        # Handle explicit Author field (common in Playlists/Albums)
+        author = item.get("author")
+        if author:
+            author_name = author.get("name") if isinstance(author, dict) else str(author)
+            if author_name:
+                # If author URL is present, we could make it a link, but for now just text
+                rich_chunks.append(f"By {author_name}")
+
+        followers = item.get("followers")
+        if followers:
+            rich_chunks.append(f"{followers} Followers")
+
+        if isinstance(table_data, dict) and table_data:
             # Check for Rating + Votes pair
             rating = None
             votes = None
-
-            # Identify keys that match 'rating' or 'votes' (case-insensitive)
-            # and collect others.
-
             other_attributes = []
 
             for k, v in table_data.items():
@@ -370,19 +401,62 @@ class FourgetHijackerClient:
             for key, value in other_attributes:
                 rich_chunks.append(f"{key}: {value}")
 
-            if rich_chunks:
-                # Prepend rich attributes with elegant separators
-                snippet_text = " • ".join(rich_chunks)
+        if rich_chunks:
+            # Prepend rich attributes with elegant separators
+            snippet_text = " • ".join(rich_chunks)
+            if content:
+                content = f"{snippet_text} — {content}"
+            else:
+                content = snippet_text
+
+        # Append Sitelinks (Deep Links) as Minimal HTML Anchors
+        # Schema: sublink is nested dict {"Title" => "URL"} or list of dicts
+        sublinks = item.get("sublink")
+        if sublinks and isinstance(sublinks, dict):
+            sitelink_anchors = []
+            for sl_title, sl_url in sublinks.items():
+                if not sl_title or not sl_url: continue
+                # Basic validation
+                if not isinstance(sl_url, str) or not FourgetHijackerClient._is_valid_url(sl_url): continue
+                
+                # HTML Escape Title for Safety
+                safe_title = sl_title.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                safe_url = sl_url.replace('"', '&quot;') # minimal escaping for href attr
+                
+                sitelink_anchors.append(f'<a href="{safe_url}">{safe_title}</a>')
+            
+            if sitelink_anchors:
+                # Minimal format: ...description. <br>Link • Link
+                links_html = " • ".join(sitelink_anchors)
                 if content:
-                    content = f"{snippet_text} — {content}"
+                    content = f"{content}<br>{links_html}"
                 else:
-                    content = snippet_text
+                    content = links_html
 
         result = {
             "title": FourgetHijackerClient._truncate_content(title),
             "url": url,
             "content": content
         }
+
+        # Attempt to extract thumbnail if present (commonly 'thumb' or 'thumbnail')
+        raw_thumb = item.get("thumb") or item.get("thumbnail")
+        if raw_thumb:
+            # Handle potential dict structure (e.g. {"url": "..."}) or direct string
+            thumb_url = None
+            if isinstance(raw_thumb, dict):
+                thumb_url = raw_thumb.get("url")
+            elif isinstance(raw_thumb, str):
+                thumb_url = raw_thumb
+            
+            # Normalize
+            thumb_url = FourgetHijackerClient._normalize_thumbnail_url(
+                thumb_url, context="web thumbnail"
+            )
+            
+            if thumb_url:
+                result["thumbnail"] = thumb_url
+
         date_obj = FourgetHijackerClient._parse_date(item.get("date") or item.get("publishedDate"))
         if date_obj: result["publishedDate"] = date_obj
         return result
@@ -487,7 +561,15 @@ class FourgetHijackerClient:
             "content": FourgetHijackerClient._truncate_content(item.get("description")),
         }
 
-        raw_thumb = item.get("thumb")
+        # Handle Author/Channel
+        author = item.get("author")
+        if author:
+            if isinstance(author, dict):
+                result["author"] = author.get("name")
+            elif isinstance(author, str):
+                result["author"] = author
+
+        raw_thumb = item.get("thumb") or item.get("thumbnail")
         thumb_url = None
         if isinstance(raw_thumb, dict):
             thumb_url = raw_thumb.get("url")
@@ -503,7 +585,37 @@ class FourgetHijackerClient:
         date_obj = FourgetHijackerClient._parse_date(item.get("date") or item.get("publishedDate"))
         if date_obj:
             result["publishedDate"] = date_obj
+
+        # Map rich video metadata
+        duration_str = item.get("duration")
+        if duration_str and (isinstance(duration_str, str) or isinstance(duration_str, (int, float))):
+            # SearXNG handles int as seconds, or strings like "12:30"
+            result["length"] = int(duration_str) if isinstance(duration_str, (int, float)) else duration_str
+
+        views_val = item.get("views")
+        if views_val:
+            result["views"] = str(views_val)
+
         return result
+
+    @staticmethod
+    def _normalize_media_result(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Normalize songs and podcasts to Video-like results."""
+        res = FourgetHijackerClient._normalize_video_result(item)
+        if not res: return None
+        
+        # Append stream info if available
+        stream = item.get("stream")
+        if stream and isinstance(stream, dict):
+            endpoint = stream.get("endpoint")
+            if endpoint:
+                extra = f"Source: {endpoint.upper()}"
+                if res.get("content"):
+                    res["content"] += f" | {extra}"
+                else:
+                    res["content"] = extra
+        
+        return res
 
     @staticmethod
     def _normalize_news_result(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -538,4 +650,10 @@ class FourgetHijackerClient:
         date_obj = FourgetHijackerClient._parse_date(item.get("date"))
         if date_obj:
             result["publishedDate"] = date_obj
+        
+        # Map Author/Source
+        author = item.get("author") or item.get("source")
+        if author and isinstance(author, str):
+            result["author"] = author
+
         return result
