@@ -5,6 +5,11 @@ import time
 from urllib.parse import parse_qs, urlparse, unquote_plus
 from html import unescape
 from searx.result_types import Answer
+from searx.exceptions import (
+    SearxEngineCaptchaException,
+    SearxEngineTooManyRequestsException,
+    SearxEngineResponseException
+)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -64,9 +69,14 @@ class FourgetHijackerClient:
 
     @staticmethod
     def dispatch_response(resp: Any, engine_id: str, logger: Any) -> list:
-        """Centralized response handler with error logging."""
+        """Centralized response handler with error hoisting."""
         try:
             return FourgetHijackerClient.normalize_results(resp.json())
+        except (SearxEngineCaptchaException, 
+                SearxEngineTooManyRequestsException, 
+                SearxEngineResponseException):
+            # Re-raise SearXNG exceptions for the engine supervisor to handle
+            raise
         except Exception as e:
             logger.error(f'4get {engine_id} response error: {e}')
             return []
@@ -158,12 +168,15 @@ class FourgetHijackerClient:
 
     @staticmethod
     def _normalize_thumbnail_url(url: Any, context: str = "thumbnail") -> Optional[str]:
-        """Normalize and validate thumbnail URL."""
+        """Normalize, unwrap, and validate thumbnail URL."""
         if not url or not isinstance(url, str):
             return None
 
         if url.startswith("//"):
             url = "https:" + url
+
+        # Unwrap 4get proxy if present (crucial for Web results)
+        url = FourgetHijackerClient._extract_proxied_url(url)
 
         if not FourgetHijackerClient._is_valid_url(url):
             logger.debug(f"Rejected {context} URL (invalid format): {url[:100]}")
@@ -185,7 +198,15 @@ class FourgetHijackerClient:
 
         # propagate 4get error status
         if response_data.get("status") == "error":
-            raise RuntimeError(f"4get upstream error: {response_data.get('message', 'Unknown error')}")
+            msg = response_data.get('message', 'Unknown error')
+            msg_l = msg.lower()
+            
+            if 'captcha' in msg_l:
+                raise SearxEngineCaptchaException(msg)
+            if 'too many requests' in msg_l or '429' in msg:
+                raise SearxEngineTooManyRequestsException(msg)
+            
+            raise SearxEngineResponseException(f"4get upstream error: {msg}")
 
         # 1. Spelling
         spelling = response_data.get("spelling")
@@ -493,6 +514,10 @@ class FourgetHijackerClient:
 
                 # unquote_plus handles '+' as space, matching parse_qs behavior
                 candidate = unquote_plus(raw_val)
+                # Fix for double-encoded HTML entities (e.g. &amp;) often seen in Reddit/4get URLs
+                if '&amp;' in candidate:
+                    candidate = unescape(candidate)
+
                 if FourgetHijackerClient._is_valid_url(candidate):
                     return candidate
 
