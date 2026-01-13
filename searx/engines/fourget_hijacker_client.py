@@ -2,7 +2,7 @@ import re
 from typing import Dict, Any, Optional
 from datetime import datetime
 import time
-from urllib.parse import parse_qs, urlparse, unquote_plus
+from urllib.parse import urlparse, unquote_plus
 from html import unescape
 from searx.result_types import Answer
 from searx.exceptions import (
@@ -16,7 +16,16 @@ logger = logging.getLogger(__name__)
 
 # Pre-compiled regex patterns
 _BROKEN_IMAGE_RE = re.compile(
-    r'(data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP|transparent\.gif|1x1\.(gif|png)|0x0|broken_image|image_not_found|no_image|placeholder\.(png|jpg|svg))',
+    r'''(?x)
+    # Data URI for 1x1 transparent GIF (exact prefix)
+    ^data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP
+    |
+    # Pixel trackers - specific filenames only (consistent extensions)
+    /(?:1x1|spacer|blank|tracking)\.(gif|png|jpg|jpeg|webp)(?:\?|$)
+    |
+    # Placeholder patterns - exact filenames (consistent extensions)
+    /(?:placeholder|no[-_]?image|image[-_]?not[-_]?found|default[-_]?(?:image|thumb)|broken[-_]?image)\.(gif|png|jpg|jpeg|svg|webp)(?:\?|$)
+    ''',
     re.IGNORECASE
 )
 _WHITESPACE_RE = re.compile(r'\s+')
@@ -28,6 +37,7 @@ class FourgetHijackerClient:
     # --- Constants ---
     NSFW_MAP = {0: "yes", 1: "maybe", 2: "no"}
     TIME_MAPPINGS = {'day': 86400, 'week': 604800, 'month': 2592000, 'year': 31536000}
+    FUTURE_DATE_LEEWAY = 86400  # 24 hours buffer for clock skew and pre-dated articles
 
 
     YANDEX_LANGS = frozenset(["en", "ru", "be", "fr", "de", "id", "kk", "tt", "tr", "uk"])
@@ -128,9 +138,23 @@ class FourgetHijackerClient:
     def _is_valid_url(url: Any) -> bool:
         if not url or not isinstance(url, str):
             return False
-        if len(url) > 15 and url.startswith(("http://", "https://")):
+        if len(url) > 10 and url.startswith(("http://", "https://")):
              return True
         return False
+
+    @staticmethod
+    def _is_root_path_url(url: str) -> bool:
+        """Check if URL is just a domain root with no meaningful path or query (e.g., 'https://example.com/')."""
+        if not url:
+            return True
+        try:
+            parsed = urlparse(url)
+            path = parsed.path.rstrip('/')
+            has_path = path and path != ''
+            has_query = bool(parsed.query)
+            return not has_path and not has_query
+        except Exception:
+            return True
 
     @staticmethod
     def _is_broken_image_url(url: str) -> bool:
@@ -186,6 +210,10 @@ class FourgetHijackerClient:
             logger.debug(f"Rejected {context} URL (broken image pattern): {url[:100]}")
             return None
 
+        if FourgetHijackerClient._is_root_path_url(url):
+            logger.debug(f"Rejected {context} URL (root path only): {url[:100]}")
+            return None
+
         return url
 
     # --- Normalization Logic ---
@@ -201,10 +229,10 @@ class FourgetHijackerClient:
             msg = response_data.get('message', 'Unknown error')
             msg_l = msg.lower()
             
-            if 'captcha' in msg_l:
-                raise SearxEngineCaptchaException(msg)
+            if 'captcha' in msg_l or 'pow' in msg_l:
+                raise SearxEngineCaptchaException(suspended_time=300, message=msg)
             if 'too many requests' in msg_l or '429' in msg:
-                raise SearxEngineTooManyRequestsException(msg)
+                raise SearxEngineTooManyRequestsException(suspended_time=60, message=msg)
             
             raise SearxEngineResponseException(f"4get upstream error: {msg}")
 
@@ -271,15 +299,16 @@ class FourgetHijackerClient:
 
     @staticmethod
     def _has_invalid_date(item: Dict[str, Any], current_ts: float) -> bool:
-        """Filter future dates using fast timestamp check."""
+        """Filter future dates with leeway for clock skew and pre-dated articles."""
         if "date" not in item:
             return False
         date_val = item["date"]
         if not date_val:
             return False
         try:
-            if int(date_val) > current_ts:
+            if int(date_val) > current_ts + FourgetHijackerClient.FUTURE_DATE_LEEWAY:
                 return True
+                
         except (ValueError, TypeError, OverflowError):
             return True
         return False
@@ -370,8 +399,7 @@ class FourgetHijackerClient:
 
         if not FourgetHijackerClient._is_valid_url(url) or not title: return None
 
-        # Sanity checks
-        if url == title: return None
+        # Sanity check: reject null byte injection
         if '\x00' in url or '\x00' in title: return None
 
         content = FourgetHijackerClient._truncate_content(item.get("description"))
@@ -475,7 +503,7 @@ class FourgetHijackerClient:
                 thumb_url, context="web thumbnail"
             )
             
-            if thumb_url:
+            if thumb_url and thumb_url != url:
                 result["thumbnail"] = thumb_url
 
         date_obj = FourgetHijackerClient._parse_date(item.get("date") or item.get("publishedDate"))
@@ -545,14 +573,18 @@ class FourgetHijackerClient:
         if not FourgetHijackerClient._is_valid_url(img_url):
             return None
 
+        # Sanity check
+        if '\x00' in img_url: return None
+
+        # Extract from proxy FIRST, then validate
+        img_url = FourgetHijackerClient._extract_proxied_url(img_url)
+        thumb_url = FourgetHijackerClient._extract_proxied_url(thumb_url) if thumb_url else None
+
         if FourgetHijackerClient._is_broken_image_url(img_url):
             return None
 
-        # Sanity checks
-        if '\x00' in img_url: return None
-
-        img_url = FourgetHijackerClient._extract_proxied_url(img_url)
-        thumb_url = FourgetHijackerClient._extract_proxied_url(thumb_url) if thumb_url else None
+        if FourgetHijackerClient._is_root_path_url(img_url):
+            return None
 
         title = item.get("title") or "Image"
         if '\x00' in title: return None
@@ -576,8 +608,7 @@ class FourgetHijackerClient:
         if not FourgetHijackerClient._is_valid_url(url) or not title:
             return None
 
-        # Sanity checks
-        if url == title: return None
+        # Sanity check: reject null byte injection
         if '\x00' in url or '\x00' in title: return None
 
         result = {
@@ -604,7 +635,7 @@ class FourgetHijackerClient:
         thumb_url = FourgetHijackerClient._normalize_thumbnail_url(
             thumb_url, context="video thumbnail"
         )
-        if thumb_url:
+        if thumb_url and thumb_url != url:
             result["thumbnail"] = thumb_url
 
         date_obj = FourgetHijackerClient._parse_date(item.get("date") or item.get("publishedDate"))
@@ -649,8 +680,7 @@ class FourgetHijackerClient:
         if not FourgetHijackerClient._is_valid_url(url) or not title:
             return None
 
-        # Sanity checks
-        if url == title: return None
+        # Sanity check: reject null byte injection
         if '\x00' in url or '\x00' in title: return None
 
         result = {
@@ -669,7 +699,7 @@ class FourgetHijackerClient:
         thumb_url = FourgetHijackerClient._normalize_thumbnail_url(
             thumb_url, context="news thumbnail"
         )
-        if thumb_url:
+        if thumb_url and thumb_url != url:
             result["thumbnail"] = thumb_url
 
         date_obj = FourgetHijackerClient._parse_date(item.get("date"))

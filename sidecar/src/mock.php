@@ -47,8 +47,7 @@ class backend {
         $token = bin2hex(random_bytes(16));
         $data = [
             'url' => $url,
-            'proxy' => $proxy,
-            'cookies' => [] 
+            'proxy' => $proxy
         ];
         apcu_store("4get_$token", $data, 3600);
 
@@ -70,15 +69,6 @@ class backend {
             return [null, '127.0.0.1'];
         }
         return [$data['url'], $data['proxy']];
-    }
-
-    public function detect_sorry($html = '') {
-        if (stripos($html, 'captcha') !== false || 
-            stripos($html, 'unusual traffic') !== false ||
-            stripos($html, '429 too many requests') !== false) {
-            return true;
-        }
-        return false;
     }
 }
 
