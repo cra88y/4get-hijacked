@@ -138,7 +138,8 @@ class FourgetHijackerClient:
     def _is_valid_url(url: Any) -> bool:
         if not url or not isinstance(url, str):
             return False
-        if len(url) > 10 and url.startswith(("http://", "https://")):
+        # Reduced length check (min "ftp:/" is 5) and expanded protocols
+        if len(url) >= 5 and url.startswith(("http://", "https://", "magnet:", "ftp://", "ipfs://", "ipns://", "git://")):
              return True
         return False
 
@@ -193,11 +194,9 @@ class FourgetHijackerClient:
     @staticmethod
     def _normalize_thumbnail_url(url: Any, context: str = "thumbnail") -> Optional[str]:
         """Normalize, unwrap, and validate thumbnail URL."""
-        if not url or not isinstance(url, str):
+        url = FourgetHijackerClient._sanitize_url(url)
+        if not url:
             return None
-
-        if url.startswith("//"):
-            url = "https:" + url
 
         # Unwrap 4get proxy if present (crucial for Web results)
         url = FourgetHijackerClient._extract_proxied_url(url)
@@ -391,11 +390,8 @@ class FourgetHijackerClient:
 
     @staticmethod
     def _normalize_web_result(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        url = item.get("url")
+        url = FourgetHijackerClient._sanitize_url(item.get("url"))
         title = item.get("title")
-
-        if url and url.startswith("//"):
-            url = "https:" + url
 
         if not FourgetHijackerClient._is_valid_url(url) or not title: return None
 
@@ -576,6 +572,12 @@ class FourgetHijackerClient:
         # Sanity check
         if '\x00' in img_url: return None
 
+        # Heal raw URL before proxy extraction
+        img_url = FourgetHijackerClient._sanitize_url(img_url)
+        thumb_url = FourgetHijackerClient._sanitize_url(thumb_url)
+
+        if not img_url: return None
+
         # Extract from proxy FIRST, then validate
         img_url = FourgetHijackerClient._extract_proxied_url(img_url)
         thumb_url = FourgetHijackerClient._extract_proxied_url(thumb_url) if thumb_url else None
@@ -603,7 +605,7 @@ class FourgetHijackerClient:
 
     @staticmethod
     def _normalize_video_result(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        url = item.get("url")
+        url = FourgetHijackerClient._sanitize_url(item.get("url"))
         title = item.get("title")
         if not FourgetHijackerClient._is_valid_url(url) or not title:
             return None
@@ -675,7 +677,7 @@ class FourgetHijackerClient:
 
     @staticmethod
     def _normalize_news_result(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        url = item.get("url")
+        url = FourgetHijackerClient._sanitize_url(item.get("url"))
         title = item.get("title")
         if not FourgetHijackerClient._is_valid_url(url) or not title:
             return None
