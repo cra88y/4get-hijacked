@@ -123,9 +123,7 @@ try {
         error_log("Hijacker: Scraper '{$engine}' method '{$method}' returned 0 results.");
     }
 
-    if (isset($result['npt'])) {
-        // It's already there, do nothing
-    } elseif (isset($instance->npt)) {
+    if (!isset($result['npt']) && isset($instance->npt)) {
         $result['npt'] = $instance->npt;
     }
 

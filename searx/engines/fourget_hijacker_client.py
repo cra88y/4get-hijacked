@@ -88,7 +88,7 @@ class FourgetHijackerClient:
             # Re-raise SearXNG exceptions for the engine supervisor to handle
             raise
         except Exception as e:
-            logger.error(f'4get {engine_id} response error: {e}')
+            logger.debug(f'4get {engine_id} response error: {e}')
             return []
 
     @staticmethod
@@ -169,6 +169,7 @@ class FourgetHijackerClient:
             has_query = bool(parsed.query)
             return not has_path and not has_query
         except Exception:
+            logger.debug(f'_is_root_path_url failed for: {url[:100] if url else "None"}')
             return True
 
     @staticmethod
@@ -305,7 +306,7 @@ class FourgetHijackerClient:
                             result["template"] = FourgetHijackerClient._TEMPLATES[result_type]
                         results.append(result)
                 except Exception as e:
-                    logger.error(f"Failed to normalize {result_type} result: {e}")
+                    logger.debug(f'Failed to normalize {result_type} result: {e}')
                     continue
 
         return results
@@ -386,8 +387,6 @@ class FourgetHijackerClient:
                     })
 
         sublinks = item.get("sublink", {})
-        # Schema: sublink in infobox/answer can be a list of dicts [{"title": "...", "url": "..."}] 
-        # OR a dict {"Title": "Url"}
         if isinstance(sublinks, dict):
             for label, url in sublinks.items():
                 if url and FourgetHijackerClient._is_valid_url(url):
@@ -468,8 +467,6 @@ class FourgetHijackerClient:
             else:
                 content = snippet_text
 
-        # Append Sitelinks (Deep Links) as Minimal HTML Anchors
-        # Schema: sublink is nested dict {"Title" => "URL"} or list of dicts
         sublinks = item.get("sublink")
         if sublinks and isinstance(sublinks, dict):
             sitelink_anchors = []
@@ -559,7 +556,8 @@ class FourgetHijackerClient:
                 if FourgetHijackerClient._is_valid_url(candidate):
                     return candidate
 
-        except Exception:
+        except Exception as e:
+            logger.debug(f'_extract_proxied_url failed for: {url[:100] if url else "None"}: {e}')
             pass
 
         # Fallback: strict safety return original if extraction failed
@@ -588,9 +586,6 @@ class FourgetHijackerClient:
 
         if not img_url: return None
 
-        # Extract from proxy FIRST, then validate
-
-        # Extract from proxy FIRST, then validate
         img_url = FourgetHijackerClient._extract_proxied_url(img_url)
         thumb_url = FourgetHijackerClient._extract_proxied_url(thumb_url) if thumb_url else None
 

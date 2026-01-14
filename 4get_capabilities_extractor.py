@@ -128,11 +128,7 @@ def analyze_output_assignment(body, category):
             elif val == '[]' or val == 'array()':
                 is_supported = False
             
-            # Special check for thumb URL being null inside an array
-            # "thumb" => ["url" => null]
             if field == "thumb" and val.startswith('['):
-                # This is tricky without a full parser, but we can peek ahead in the original body 
-                # from the match end
                 snippet_start = match.end()
                 snippet = body[snippet_start:snippet_start+200]
                 if re.search(r'["\']url["\']\s*=>\s*null', snippet, re.IGNORECASE):
