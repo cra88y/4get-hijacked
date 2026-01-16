@@ -4,6 +4,9 @@ services:
     image: 'ghcr.io/searxng/searxng:latest'
     container_name: searxng
     restart: unless-stopped
+    sysctls:
+      - net.ipv4.ip_default_ttl=128
+      - net.ipv4.tcp_timestamps=0
     depends_on:
       - valkey
       - 4get-hijacked
@@ -80,6 +83,9 @@ services:
     ports:
       - '8081:80'
     restart: unless-stopped
+    sysctls:
+      - net.ipv4.ip_default_ttl=128
+      - net.ipv4.tcp_timestamps=0
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost/health.php || exit 1" ]
       interval: 30s
