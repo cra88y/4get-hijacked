@@ -34,8 +34,8 @@ ENV CURL_IMPERSONATE=ff117
 
 WORKDIR /var/www/html
 
-# 4. Clone 4get-repo
-RUN git clone --depth 1 https://git.lolcat.ca/lolcat/4get.git /var/www/html/4get-repo \
+# 4. Clone 4get-repo (SSL verify disabled - git.lolcat.ca has untrusted cert)
+RUN GIT_SSL_NO_VERIFY=1 git clone --depth 1 https://git.lolcat.ca/lolcat/4get.git /var/www/html/4get-repo \
     && chown -R www-data:www-data /var/www/html/4get-repo
 
 # 5. Create dummy lib structure
