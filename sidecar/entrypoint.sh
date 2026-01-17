@@ -30,7 +30,8 @@ php /var/www/html/generate_manifest.php
 
 if ! grep -q "HostnameLookups Off" /etc/apache2/apache2.conf; then
     echo "HostnameLookups Off" >> /etc/apache2/apache2.conf
-    echo "✅ Apache DNS lookups disabled."
+    echo "ServerName localhost" >> /etc/apache2/apache2.conf
+    echo "✅ Apache DNS lookups disabled and ServerName set."
 fi
 
 exec "$@"
