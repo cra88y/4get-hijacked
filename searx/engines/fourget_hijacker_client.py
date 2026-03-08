@@ -14,7 +14,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Pre-compiled regex patterns
+# PRE-COMPILED REGEX
 _BROKEN_IMAGE_RE = re.compile(
     r'''(?x)
     # Data URI for 1x1 transparent GIF (exact prefix)
@@ -48,17 +48,17 @@ class FourgetHijackerClient:
 
     @staticmethod
     def dispatch_request(engine_id: str, query: str, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Centralized request handler for all 4get hijacked engines."""
+        """ROUTE: Centralized request handler for all 4get hijacked engines."""
         fourget_params = FourgetHijackerClient.get_4get_params(query, params, engine_name=engine_id)
 
-        # Extract category from SearXNG params (dict or OnlineParams)
+        # HAZARD: SearXNG params might be dict or OnlineParams object. getattr() is safer here.
         category = params.get('category', 'general') if hasattr(params, 'get') else 'general'
         
         if category == 'general' and hasattr(params, 'category'):
             category = params.category
 
-        # Translate all SearXNG categories to 4get method names
-        if category == 'general':
+        # INVARIANT: Bang syntax assigns 'none'. Fall through defaults block without breaking upstream dispatch.
+        if category in ('general', 'none', None):
             category = 'web'
         elif category == 'images':
             category = 'image'
@@ -79,13 +79,13 @@ class FourgetHijackerClient:
 
     @staticmethod
     def dispatch_response(resp: Any, engine_id: str, logger: Any) -> list:
-        """Centralized response handler with error hoisting."""
+        """NORMALIZE: Centralized response handler with error hoisting."""
         try:
             return FourgetHijackerClient.normalize_results(resp.json())
         except (SearxEngineCaptchaException, 
                 SearxEngineTooManyRequestsException, 
                 SearxEngineResponseException):
-            # Re-raise SearXNG exceptions for the engine supervisor to handle
+            # INVARIANT: Escalate SearXNG-specific exceptions so engine supervisors accurately block/suspend engines.
             raise
         except Exception as e:
             logger.debug(f'4get {engine_id} response error: {e}')
@@ -93,13 +93,27 @@ class FourgetHijackerClient:
 
     @staticmethod
     def get_4get_params(query: str, params: Dict[str, Any], engine_name: str = None) -> Dict[str, Any]:
-        """Build 4get params from SearXNG params."""
+        """EXTRACT: Build 4get params from SearXNG params."""
         fourget_params = {"s": query}
 
         if "safesearch" in params:
             fourget_params["nsfw"] = FourgetHijackerClient.NSFW_MAP.get(params["safesearch"], "yes")
 
-        if "language" in params:
+        sxng_locale = params.get("searxng_locale", "all")
+        
+        if sxng_locale != 'all':
+            parts = sxng_locale.split("-")
+            lang = parts[0]
+            country = parts[1] if len(parts) > 1 else "us"
+
+            if engine_name and engine_name.startswith("yandex"):
+                fourget_params["lang"] = lang if lang in FourgetHijackerClient.YANDEX_LANGS else "en"
+            else:
+                fourget_params["lang"] = lang
+
+            fourget_params["country"] = country.lower()
+        elif "language" in params:
+            # HAZARD: Legacy fallback for instances bypassing `searxng_locale`. Ensure engine prefixes match.
             lang_full = params["language"]
             lang = lang_full.split("-")[0] if "-" in lang_full else lang_full
             country = lang_full.split("-")[1] if "-" in lang_full else "us"
@@ -196,7 +210,7 @@ class FourgetHijackerClient:
         if len(content) > FourgetHijackerClient.MAX_CONTENT_LENGTH * 2:
             content = content[:FourgetHijackerClient.MAX_CONTENT_LENGTH * 2]
 
-        # Only unescape if entity markers likely exist (check first 100 chars)
+        # HAZARD: Avoid full unescape on clean text to save CPU. Check first 100 chars for indicative entities.
         if '&' in content[:min(100, len(content))]:
             content = unescape(content)
 
@@ -213,7 +227,7 @@ class FourgetHijackerClient:
         if not url:
             return None
 
-        # Unwrap 4get proxy if present (crucial for Web results)
+        # INVARIANT: Extract proxy wrappers aggressively so we don't serve dead proxy endpoints.
         url = FourgetHijackerClient._extract_proxied_url(url)
 
         if not FourgetHijackerClient._is_valid_url(url):
@@ -238,7 +252,7 @@ class FourgetHijackerClient:
         if not isinstance(response_data, dict):
             return results
 
-        # propagate 4get error status
+        # INVARIANT: Hoist 4get internal errors upstream as proper Searx exceptions to trigger global retries/cooldowns.
         if response_data.get("status") == "error":
             msg = response_data.get('message', 'Unknown error')
             msg_l = msg.lower()
@@ -252,21 +266,18 @@ class FourgetHijackerClient:
             
             raise SearxEngineResponseException(f"4get upstream error: {msg}")
 
-        # 1. Spelling
         spelling = response_data.get("spelling")
         if isinstance(spelling, dict) and spelling.get("type") != "no_correction":
             correction = spelling.get("correction")
             if correction and isinstance(correction, str) and correction.strip():
                 results.append({"suggestion": correction.strip()})
 
-        # 2. Related
         related_list = response_data.get("related")
         if isinstance(related_list, list):
             for related in related_list:
                 if related and isinstance(related, str) and related.strip():
                     results.append({"suggestion": related.strip()})
 
-        # 3. Answers
         answer_list = response_data.get("answer")
         if isinstance(answer_list, list):
             for answer in answer_list:
@@ -315,7 +326,7 @@ class FourgetHijackerClient:
 
     @staticmethod
     def _has_invalid_date(item: Dict[str, Any], current_ts: float) -> bool:
-        """Filter future dates with leeway for clock skew and pre-dated articles."""
+        """FILTER: Reject impossible or highly-skewed future dates."""
         if "date" not in item:
             return False
         date_val = item["date"]
@@ -410,21 +421,18 @@ class FourgetHijackerClient:
 
         if not FourgetHijackerClient._is_valid_url(url) or not title: return None
 
-        # Sanity check: reject null byte injection
         if '\x00' in url or '\x00' in title: return None
 
         content = FourgetHijackerClient._truncate_content(item.get("description"))
 
-        # Enrich content with table data if present
         table_data = item.get("table")
         rich_chunks = []
 
-        # Handle explicit Author field (common in Playlists/Albums)
         author = item.get("author")
         if author:
             author_name = author.get("name") if isinstance(author, dict) else str(author)
             if author_name:
-                # If author URL is present, we could make it a link, but for now just text
+                # INVARIANT: Exclude Author URL linking to avoid clickout tracking/escapes, preserve as text.
                 rich_chunks.append(f"By {author_name}")
 
         followers = item.get("followers")
@@ -462,7 +470,7 @@ class FourgetHijackerClient:
                 rich_chunks.append(f"{key}: {value}")
 
         if rich_chunks:
-            # Prepend rich attributes with elegant separators
+            # INVARIANT: Separate rich attributes cleanly from standard text snippet using aesthetic bullets.
             snippet_text = " • ".join(rich_chunks)
             if content:
                 content = f"{snippet_text} — {content}"
@@ -474,12 +482,12 @@ class FourgetHijackerClient:
             sitelink_anchors = []
             for sl_title, sl_url in sublinks.items():
                 if not sl_title or not sl_url: continue
-                # Basic validation
+            
                 if not isinstance(sl_url, str) or not FourgetHijackerClient._is_valid_url(sl_url): continue
                 
-                # HTML Escape Title for Safety
+                # HAZARD: Sitelink inject vectors. Raw strings dumped directly into anchors.
                 safe_title = sl_title.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                safe_url = sl_url.replace('"', '&quot;') # minimal escaping for href attr
+                safe_url = sl_url.replace('"', '&quot;')
                 
                 sitelink_anchors.append(f'<a href="{safe_url}">{safe_title}</a>')
             
@@ -497,17 +505,15 @@ class FourgetHijackerClient:
             "content": content
         }
 
-        # Attempt to extract thumbnail if present (commonly 'thumb' or 'thumbnail')
         raw_thumb = item.get("thumb") or item.get("thumbnail")
         if raw_thumb:
-            # Handle potential dict structure (e.g. {"url": "..."}) or direct string
+            # HAZARD: Upstream can return dicts `{"url":...}` or primitive strings.
             thumb_url = None
             if isinstance(raw_thumb, dict):
                 thumb_url = raw_thumb.get("url")
             elif isinstance(raw_thumb, str):
                 thumb_url = raw_thumb
             
-            # Normalize
             thumb_url = FourgetHijackerClient._normalize_thumbnail_url(
                 thumb_url, context="web thumbnail"
             )
@@ -524,15 +530,12 @@ class FourgetHijackerClient:
         """Extract original URL from 4get proxy wrapper if present."""
         if not url or "url=" not in url:
             return url
-        # Conservative check
+        # INVARIANT: Only extract proxy formats if the link is relative or specifically tied to 4get.
         if not (url.startswith("/") or "4get" in url.lower()):
             return url
 
         try:
-            # Supports ?url=... and &url=...
-
-            # Edge Case: Fragments. We must essentially ignore anything after '#'
-            # Splitting is cheaper than full parsing.
+            # HAZARD: Isoline parsing of URL fragments must occur before query search, or fragment '#' injection causes parse-breakage on decode.
             work_url = url.split('#', 1)[0]
 
             start_idx = work_url.find('?url=')
@@ -540,7 +543,6 @@ class FourgetHijackerClient:
                 start_idx = work_url.find('&url=')
 
             if start_idx != -1:
-                # Extract value part (skip ?url= or &url= which is 5 chars)
                 val_start = start_idx + 5
                 val_end = work_url.find('&', val_start)
 
@@ -549,9 +551,9 @@ class FourgetHijackerClient:
                 else:
                     raw_val = work_url[val_start:val_end]
 
-                # unquote_plus handles '+' as space, matching parse_qs behavior
+                # INVARIANT: `unquote_plus` ensures '+' encodes back to spacing as expected by parse_qs mechanics.
                 candidate = unquote_plus(raw_val)
-                # Fix for double-encoded HTML entities (e.g. &amp;) often seen in Reddit/4get URLs
+                # INVARIANT: Double-encoded `&amp;` is extremely common in raw 4get reddit/img endpoints.
                 if '&amp;' in candidate:
                     candidate = unescape(candidate)
 
@@ -583,7 +585,6 @@ class FourgetHijackerClient:
         if not FourgetHijackerClient._is_valid_url(img_url):
             return None
 
-        # Sanity check
         if '\x00' in img_url: return None
 
         if not img_url: return None
@@ -619,7 +620,6 @@ class FourgetHijackerClient:
         if not FourgetHijackerClient._is_valid_url(url) or not title:
             return None
 
-        # Sanity check: reject null byte injection
         if '\x00' in url or '\x00' in title: return None
 
         result = {
@@ -628,7 +628,6 @@ class FourgetHijackerClient:
             "content": FourgetHijackerClient._truncate_content(item.get("description")),
         }
 
-        # Handle Author/Channel
         author = item.get("author")
         if author:
             if isinstance(author, dict):
@@ -653,7 +652,6 @@ class FourgetHijackerClient:
         if date_obj:
             result["publishedDate"] = date_obj
 
-        # Map rich video metadata
         duration_str = item.get("duration")
         if duration_str and (isinstance(duration_str, str) or isinstance(duration_str, (int, float))):
             # SearXNG handles int as seconds, or strings like "12:30"
@@ -691,7 +689,6 @@ class FourgetHijackerClient:
         if not FourgetHijackerClient._is_valid_url(url) or not title:
             return None
 
-        # Sanity check: reject null byte injection
         if '\x00' in url or '\x00' in title: return None
 
         result = {
