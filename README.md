@@ -1,3 +1,5 @@
+**just a temporary notice that currently the 4get google engine doesn't appear to return results without the use of a residential proxy atm. most 4get instances are not returning google results at the moment.**
+
 # 4get-hijacked
 
 4get that doesn't suck?
