@@ -1,4 +1,5 @@
 **just a temporary notice that currently the 4get google engine doesn't appear to return results without the use of a residential proxy. most 4get instances are not returning google results at the moment.**
+**edit: searxng's standard google engine was recently updated and works well for now!**
 
 # 4get-hijacked
 
