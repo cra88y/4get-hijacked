@@ -255,15 +255,19 @@ class FourgetHijackerClient:
         # INVARIANT: Hoist 4get internal errors upstream as proper Searx exceptions to trigger global retries/cooldowns.
         if response_data.get("status") == "error":
             msg = response_data.get('message', 'Unknown error')
+            suspend = response_data.get('suspend', 0)
             msg_l = msg.lower()
-            
+
             if 'captcha' in msg_l or 'pow' in msg_l:
-                raise SearxEngineCaptchaException(suspended_time=300, message=msg)
+                raise SearxEngineCaptchaException(suspended_time=suspend or 300, message=msg)
             if 'too many requests' in msg_l or '429' in msg:
-                raise SearxEngineTooManyRequestsException(suspended_time=60, message=msg)
+                raise SearxEngineTooManyRequestsException(suspended_time=suspend or 60, message=msg)
             if 'blocked' in msg_l or 'forbidden' in msg_l or '403' in msg:
-                raise SearxEngineTooManyRequestsException(suspended_time=300, message=msg)
-            
+                raise SearxEngineTooManyRequestsException(suspended_time=suspend or 300, message=msg)
+
+            if suspend > 0:
+                raise SearxEngineTooManyRequestsException(suspended_time=suspend, message=msg)
+
             raise SearxEngineResponseException(f"4get upstream error: {msg}")
 
         spelling = response_data.get("spelling")

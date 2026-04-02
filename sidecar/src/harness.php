@@ -14,7 +14,6 @@ set_include_path(__DIR__ . '/dummy_lib' . PATH_SEPARATOR . __DIR__ . '/4get-repo
 $raw_input = file_get_contents('php://input');
 $input = json_decode($raw_input, true);
 
-// Basic validation
 if (!$input) {
     ob_end_clean();
     echo json_encode(['status' => 'error', 'message' => 'Invalid JSON payload received by sidecar']);
@@ -103,6 +102,13 @@ if (($params['offset'] ?? 0) > 0 && empty($params['npt'])) {
     }
 }
 
+// don't let 4get scraper warnings leak into the json response — kills all 4get engines if they do
+$scraper_warnings = [];
+$prev_handler = set_error_handler(function ($severity, $msg, $file, $line) use (&$scraper_warnings) {
+    $scraper_warnings[] = ['severity' => $severity, 'msg' => $msg, 'file' => basename($file), 'line' => $line];
+    return true;
+});
+
 try {
     $method = $input['category'] ?? 'web';
 
@@ -112,25 +118,54 @@ try {
 
     $result = $instance->$method($params);
 
+    // drain all levels — scrapers sometimes call ob_start() themselves
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+
     $resultCount = 0;
     if (isset($result[$method]) && is_array($result[$method])) {
         $resultCount = count($result[$method]);
     } elseif (isset($result['web']) && $method === 'web') {
         $resultCount = count($result['web']);
     }
-    
+
     if ($resultCount === 0) {
-        error_log("Hijacker: Scraper '{$engine}' method '{$method}' returned 0 results.");
+        $warn_summary = !empty($scraper_warnings)
+            ? ' (suppressed warnings: ' . $scraper_warnings[0]['file'] . ':' . $scraper_warnings[0]['line'] . ')'
+            : '';
+        error_log("Hijacker: Scraper '{$engine}' method '{$method}' returned 0 results{$warn_summary}");
     }
 
     if (!isset($result['npt']) && isset($instance->npt)) {
         $result['npt'] = $instance->npt;
     }
 
-    ob_end_clean();
-    echo json_encode($result);
+    echo json_encode($result) ?: '{"web":[]}';
 } catch (Throwable $e) {
-    ob_end_clean();
-    error_log("Hijacker Error: " . $e->getMessage());
-    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    // drain before writing error json
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+    $msg = $e->getMessage();
+    error_log("Hijacker Error [{$engine}]: {$msg}");
+
+    $response = ['status' => 'error', 'message' => $msg];
+    $msg_l = strtolower($msg);
+
+    if (str_contains($msg_l, 'captcha') || str_contains($msg_l, 'pow')) {
+        $response['suspend'] = 300;
+    } elseif (str_contains($msg_l, 'too many request') || str_contains($msg_l, '429')) {
+        $response['suspend'] = 60;
+    } elseif (str_contains($msg_l, 'blocked') || str_contains($msg_l, 'forbidden') || str_contains($msg_l, '403')) {
+        $response['suspend'] = 300;
+    } elseif (str_contains($msg_l, 'not found') || str_contains($msg_l, 'not supported') || str_contains($msg_l, 'class ')) {
+        $response['suspend'] = 300;
+    } else {
+        $response['suspend'] = 30;
+    }
+
+    echo json_encode($response);
+} finally {
+    restore_error_handler();
 }

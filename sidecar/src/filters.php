@@ -53,18 +53,29 @@ try {
 
     $instance = new $className();
 
+    // don't let scraper warnings leak into the response
+    $prev_handler = set_error_handler(function () { return true; });
+
     $result = [];
-    if (method_exists($instance, 'getfilters')) {
-        $result = $instance->getfilters($page);
-    } elseif (isset($instance->filter)) {
-        $result = $instance->filter;
+    try {
+        if (method_exists($instance, 'getfilters')) {
+            $result = $instance->getfilters($page);
+        } elseif (isset($instance->filter)) {
+            $result = $instance->filter;
+        }
+    } finally {
+        restore_error_handler();
     }
 
-    ob_end_clean();
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
     echo json_encode($result);
 
 } catch (Throwable $e) {
-    ob_end_clean();
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
     error_log("Filters.php Error for engine '$engine': " . $e->getMessage());
-    echo json_encode([]); 
+    echo json_encode([]);
 }
