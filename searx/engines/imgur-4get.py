@@ -1,4 +1,4 @@
-from fourget_hijacker_client import FourgetHijackerClient
+from fourget_hijacker_client import FourgetHijackerClient, about
 import logging
 logger = logging.getLogger(__name__)
 
@@ -7,3 +7,6 @@ EID = __name__.split('.')[-1].replace('-4get', '')
 
 def request(q, p): return FourgetHijackerClient.dispatch_request(EID, q, p)
 def response(r): return FourgetHijackerClient.dispatch_response(r, EID, logger)
+
+
+

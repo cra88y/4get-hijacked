@@ -14,6 +14,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+about = {
+    "website": "https://github.com/cra88y/4get-hijacked",
+    "official_api_documentation": "https://github.com/cra88y/4get-hijacked",
+    "require_api_key": False,
+    "results": "HTML"
+}
+
 # PRE-COMPILED REGEX
 _BROKEN_IMAGE_RE = re.compile(
     r'''(?x)

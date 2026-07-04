@@ -13,7 +13,7 @@ FIREFOX_UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:117.0) Gecko/20100101 F
 echo "⚙️  Configuring 4get..."
 
 if [ -f "$CONFIG_FILE" ]; then
-    sed -i "s|const USER_AGENT = \".*\";|const USER_AGENT = \"$FIREFOX_UA\";|g" "$CONFIG_FILE"
+    sed -i -E "s|const\s+USER_AGENT\s*=\s*\".*\";|const USER_AGENT = \"$FIREFOX_UA\";|g" "$CONFIG_FILE"
     echo "✅ User-Agent set to Firefox 117."
 else
     echo "⚠️  Config not found. Skipping UA patch."
@@ -21,7 +21,7 @@ fi
 
 DDG_SCRAPER="$REPO_DIR/scraper/ddg.php"
 if [ -f "$DDG_SCRAPER" ]; then
-    sed -i 's/return $this->web_full($get);/return $this->web_html($get);/' "$DDG_SCRAPER"
+    sed -i -E 's/return\s+\$this->web_full\(\$get\)\s*;/return $this->web_html($get);/' "$DDG_SCRAPER"
     echo "✅ DDG patched to HTML endpoint."
 fi
 
