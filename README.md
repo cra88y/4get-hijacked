@@ -45,6 +45,26 @@ settings-additions.yml         # Engine configs blocks needed for Searxng's sett
 docker compose up -d
 ```
 
+## Native deployments
+
+Each SearXNG engine accepts a `fourget_url` setting. The default is
+`http://4get-hijacked:80`, preserving the Docker Compose deployment. A native
+loopback deployment can use:
+
+```yaml
+engines:
+  - name: brave4
+    engine: /path/to/4get-hijacked/searx/engines/brave-4get
+    fourget_url: http://127.0.0.1:18088
+    enable_http: true
+    timeout: 3.0
+```
+
+SearXNG's engine loader accepts an absolute engine file path without the
+`.py` suffix. Include this repository's `searx/engines` directory in
+`PYTHONPATH` so the wrappers can import `fourget_hijacker_client`.
+The base URL may include a path prefix; the client appends `/harness.php`.
+
 ## Test The Sidecar
 
 ```bash

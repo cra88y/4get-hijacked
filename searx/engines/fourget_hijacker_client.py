@@ -54,7 +54,7 @@ class FourgetHijackerClient:
 
 
     @staticmethod
-    def dispatch_request(engine_id: str, query: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def dispatch_request(engine_id: str, query: str, params: Dict[str, Any], base_url: str = "http://4get-hijacked:80") -> Dict[str, Any]:
         """ROUTE: Centralized request handler for all 4get hijacked engines."""
         fourget_params = FourgetHijackerClient.get_4get_params(query, params, engine_name=engine_id)
 
@@ -74,7 +74,7 @@ class FourgetHijackerClient:
 
 
         params.update({
-            'url': 'http://4get-hijacked:80/harness.php',
+            'url': base_url.rstrip('/') + '/harness.php',
             'method': 'POST',
             'json': {
                 'engine': engine_id,
